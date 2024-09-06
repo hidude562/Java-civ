@@ -1,0 +1,4 @@
+0 - Settler
+1 - Warrior
+2 - Archer
+3 - Legion

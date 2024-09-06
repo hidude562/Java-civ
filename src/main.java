@@ -7,6 +7,7 @@ abstract class TileType {
     abstract public String toString();
     abstract public void setType(int type);
     abstract public void addUnit(Unit unit);
+    abstract public Unit getUnit(int index);
     // TODO: sadboy abstract
     // abstract public void popularMonster(sadBoy _sadBoy);
 }
@@ -130,7 +131,7 @@ class Nation {
     private int nation;
     private Cities cities;
     private Units units;
-    public Nation(int nation) {this.nation = nation;}
+    public Nation(int nation) {this.nation = nation;this.cities = new Cities();this.units = new Units();}
     public Cities getCities() {return cities;}
     public void addUnit(Unit u){units.addUnit(u);}
     public Units getUnits(){return units;}
@@ -172,10 +173,13 @@ class TileData extends TileType {
     private AssortedUnitUnits units;
     public TileData() {}
     public TileData(int type) {this.type = type;}
+    private TileData tileData(){return this;}
     public int getType() {return type;}
     public AssortedUnitUnits getUnits() {return units;}
     public String toString() {return String.valueOf(getType());}
     public void setType(int type) {this.type=type;}
+    public void addUnit(Unit unit) {units.addUnit(unit);}
+    public Unit getUnit(int index) {return units.getUnit(index);}
 }
 
 // Stores the actual tiles data, and use for passing references
@@ -222,8 +226,12 @@ class Tiles {
         private TileData tileData(){return tiles[referenceIndex];}
         public int getType() {return tileData().getType();}
         public void setType(int type) {tileData().setType(type);}
-        public Vert2D getPosition() {return getPointfromIndex(referenceIndex);}
         public AssortedUnitUnits getUnits() {return tileData().getUnits();}
+        public void addUnit(Unit u) {tileData().addUnit(u);}
+        public Unit getUnit(int index) {return tileData().getUnit(index);}
+        public String toString() {return String.valueOf(getType());}
+        public Vert2D getPosition() {return getPointfromIndex(referenceIndex);}
+        public int getReferenceIndex() {return referenceIndex;}
         public Tile getTileFromRelativeXY(Vert2D offset) {
             try {
                 return getTile(referenceIndex +
@@ -257,22 +265,21 @@ class Tiles {
             }
             return path;
         }
-        public String toString() {return String.valueOf(getType());}
     }
 
     public String toString() {
-        String val = "";
+        StringBuilder val = new StringBuilder();
         for (int y = 0; y < mapSize.getY(); y++) {
             for (int x = 0; x < mapSize.getX(); x++) {
-                val += getTile(getIndexFromPoint(
+                val.append(getTile(getIndexFromPoint(
                         new Vert2D(
                                 x, y
                         )
-                )).toString();
+                )).toString());
             }
-            val+="\n";
+            val.append("\n");
         }
-        return val;
+        return val.toString();
     }
 }
 class World {
