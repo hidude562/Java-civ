@@ -31,6 +31,8 @@ class Vert2D {
     public static Vert2D add(Vert2D a, Vert2D b) {
         return new Vert2D(a.getX() + b.getX(), a.getY() + b.getY());
     }
+    public String toString() {return String.format("(%d, %d)", x, y);}
+    public boolean equals(Vert2D o) {return o.getX() == x && o.getY() == y;}
 }
 
 class PathfinderConfig {
@@ -38,6 +40,9 @@ class PathfinderConfig {
     // False, and it starts from nothing and includes
     private boolean exclusiveMovement = true;
     private int[] tileTypes;
+    public PathfinderConfig() {
+        this.tileTypes = new int[0];
+    }
     public PathfinderConfig(boolean exclusiveMovement, int[] tileTypes) {
         this.tileTypes = tileTypes;
         this.exclusiveMovement = exclusiveMovement;
@@ -54,24 +59,61 @@ class PathfinderConfig {
     }
 }
 
+class SpecialMoveConfig {
+    private int type;
+    private String name;
+
+    public SpecialMoveConfig(int type, String name) {
+        this.type = type;
+        this.name = name;
+    }
+    public int getType() {return type;}
+    public String getName() {return name;}
+}
+
+class UnitConfig {
+    // Type of Unit
+    private int type;
+    // IDs for the special
+    private static SpecialMoveConfig[] unitSpecials = {
+            new SpecialMoveConfig(0, "Build city"),
+    };
+    private String name;
+
+    public UnitConfig(int type) {
+        this.type = type;
+    }
+    public int getType() {return type;}
+}
+
 /* Unit list reference at units.txt */
 class Unit {
     private int type;
     private boolean isDead;
     private int movementLeft;
+    static UnitConfig[] unitConfigs = {
+            new UnitConfig(0),
+    };
 
     PathfinderConfig pathfinderConfig;
 
     private Tiles.Tile tile;
-    public Unit(int type, Tiles.Tile tile) {this.type = type; this.tile = tile;}
+    public Unit(int type, Tiles.Tile tile) {
+        this.type = type;
+        this.tile = tile;
+        this.tile.addUnit(this);
+        this.pathfinderConfig = new PathfinderConfig();
+    }
     public int getType() {return type;}
     public boolean getIsDead(){return isDead;}
-
+    public boolean unitAction(){return false;}
     // Moves from one point, to the next if it is valid
     public boolean moveToTile(Tiles.Tile tile) {
         int distanceToTile = distanceToTile(tile);
         if (distanceToTile != -1 && distanceToTile <= this.movementLeft) {
+            this.tile.removeUnit(this);
             this.tile = tile;
+            tile.addUnit(this);
             this.movementLeft-=distanceToTile;
             return true;
         }
@@ -86,9 +128,6 @@ class Unit {
         // If a path was not found, return false
         if(path==null) return -1;
 
-        // Can the path be traversed with the amount of movement left
-        if(path.size() > movementLeft) return -1;
-
         // If all are passed, return length
         return path.size();
     }
@@ -100,7 +139,8 @@ class AssortedUnitUnits {
         units = new ArrayList<Unit>();
     }
     public void addUnit(Unit u){units.add(u);}
-    public Unit getUnit(int i){return units.get(i);}
+    public Unit get(int i){return units.get(i);}
+    public void remove(Unit u){units.remove(u);}
     public int size(){return units.size();}
 }
 
@@ -138,7 +178,7 @@ class Nation {
 
     class Units {
         private ArrayList<Unit> units;
-        public Units() {}
+        public Units() {this.units = new ArrayList<Unit>();}
         public void addUnit(Unit unit) {units.add(unit);}
         public Unit getUnit(int index) {return units.get(index);}
         public ArrayList<Unit> getUnits() {return units;}
@@ -147,7 +187,7 @@ class Nation {
 
 // Wrapper for a List of Nations
 class Nations {
-    ArrayList<Nation> nations;
+    ArrayList<Nation> nations = new ArrayList<>();
     public Nations(Tiles tiles, int numCivs){
         for(int i = 0; i < numCivs; i++) {
             Nation nation = new Nation(i);
@@ -159,6 +199,7 @@ class Nations {
             Unit initalSettler = new Unit(0, tile);
 
             nation.addUnit(initalSettler);
+            nations.add(nation);
         }
     };
     public Nations(ArrayList<Nation> nations){this.nations = nations;};
@@ -171,7 +212,7 @@ class Nations {
 class TileData extends TileType {
     private int type;
     private AssortedUnitUnits units;
-    public TileData() {}
+    public TileData() {units = new AssortedUnitUnits();}
     public TileData(int type) {this.type = type;}
     private TileData tileData(){return this;}
     public int getType() {return type;}
@@ -179,7 +220,11 @@ class TileData extends TileType {
     public String toString() {return String.valueOf(getType());}
     public void setType(int type) {this.type=type;}
     public void addUnit(Unit unit) {units.addUnit(unit);}
-    public Unit getUnit(int index) {return units.getUnit(index);}
+    public Unit getUnit(int index) {return units.get(index);}
+
+    public void removeUnit(Unit unit) {
+        units.units.remove(unit);
+    }
 }
 
 // Stores the actual tiles data, and use for passing references
@@ -229,7 +274,17 @@ class Tiles {
         public AssortedUnitUnits getUnits() {return tileData().getUnits();}
         public void addUnit(Unit u) {tileData().addUnit(u);}
         public Unit getUnit(int index) {return tileData().getUnit(index);}
-        public String toString() {return String.valueOf(getType());}
+
+        public String toString() {
+            if (tileData().getUnits().size() > 0) {
+                return "U" + tileData().getUnits().size(); // Assuming the first unit's type ID represents the unit for display
+            } else if (getType() == 0) {
+                return ". "; // Represents one type of tile
+            } else if (getType() == 1) {
+                return "# "; // Represents another type of tile
+            }
+            return "? "; // Default character for unknown types
+        }
         public Vert2D getPosition() {return getPointfromIndex(referenceIndex);}
         public int getReferenceIndex() {return referenceIndex;}
         public Tile getTileFromRelativeXY(Vert2D offset) {
@@ -242,20 +297,20 @@ class Tiles {
         }
         public ArrayList<Tiles.Tile> pathFind(Tiles.Tile targetTile, PathfinderConfig pathFinderConfig) {
             // TODO: Better pathfinding
-            ArrayList<Tiles.Tile> path = new ArrayList<Tiles.Tile>();
+            ArrayList<Tiles.Tile> path = new ArrayList<>();
             Tiles.Tile currentTile = this;
 
-            while(targetTile.getPosition() != currentTile.getPosition()) {
+            while(!targetTile.getPosition().equals(currentTile.getPosition())) {
                 Vert2D delta = Vert2D.delta(targetTile.getPosition(), currentTile.getPosition());
                 Vert2D direction = new Vert2D();
                 if(delta.getX() > 0)
-                    direction = Vert2D.add(direction, new Vert2D(1,0));
-                if(delta.getX() < 0)
                     direction = Vert2D.add(direction, new Vert2D(-1,0));
+                if(delta.getX() < 0)
+                    direction = Vert2D.add(direction, new Vert2D(1,0));
                 if(delta.getY() > 0)
-                    direction = Vert2D.add(direction, new Vert2D(0,1));
+                    direction = Vert2D.add(direction, new Vert2D(0,-1));
                 if(delta.getY() < 0)
-                    direction = Vert2D.add(direction, new Vert2D(1,-1));
+                    direction = Vert2D.add(direction, new Vert2D(0,1));
 
                 currentTile = currentTile.getTileFromRelativeXY(direction);
                 if(!pathFinderConfig.canGoOnTile(currentTile))
@@ -264,6 +319,10 @@ class Tiles {
                 path.add(currentTile);
             }
             return path;
+        }
+
+        public void removeUnit(Unit unit) {
+            tileData().removeUnit(unit);
         }
     }
 
@@ -284,16 +343,22 @@ class Tiles {
 }
 class World {
     // Nations of the world
-    Nations nations;
+    private Nations nations;
 
     // Tiles
-    Tiles tiles;
+    private Tiles tiles;
+
+    private int turn = 0;
 
     public World(Vert2D size) {
         tiles = new Tiles(size);
         tiles.newWorld();
         nations =  new Nations(tiles, 1);
     }
+    public Nations getNations() {return nations;}
+    public Tiles getTiles() {return tiles;}
+    public int getTurn() {return turn;}
+    public void nextTurn() {turn++;}
     public String toString() {
         return tiles.toString();
     }
@@ -304,5 +369,9 @@ public class main {
                 8, 8
         ));
         System.out.println(world);
+        int distance = world.getNations().getNation(0).getUnits().getUnit(0).distanceToTile(
+                world.getTiles().getTile(0)
+        );
+        System.out.println(distance);
     }
 }
