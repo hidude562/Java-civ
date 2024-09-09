@@ -6,8 +6,15 @@ abstract class TileType {
     abstract public AssortedUnitUnits getUnits();
     abstract public String toString();
     abstract public void setType(int type);
-    abstract public void addUnit(Unit unit);
-    abstract public Unit getUnit(int index);
+    abstract public void addUnit(Nation.Unit unit);
+    abstract public Nation.Unit getUnit(int index);
+    abstract public void removeUnit(Nation.Unit unit);
+    abstract public void setCityCenter(City city);
+    abstract public City getCityCenter();
+    abstract public boolean hasCityCenter();
+    abstract public void setOwnedCity(City ownedCity);
+    abstract public City getOwnedCity();
+    abstract public boolean hasOwnedCity();
     // TODO: sadboy abstract
     // abstract public void popularMonster(sadBoy _sadBoy);
 }
@@ -60,105 +67,97 @@ class PathfinderConfig {
 }
 
 class SpecialMoveConfig {
-    private int type;
+    private final boolean killOnUse;
     private String name;
+    private int implementationId;
 
-    public SpecialMoveConfig(int type, String name) {
-        this.type = type;
+    public SpecialMoveConfig(String name, boolean killOnUse, int implementationId) {
         this.name = name;
+        this.killOnUse = killOnUse;
     }
-    public int getType() {return type;}
     public String getName() {return name;}
+    public boolean getKillOnUse() {return killOnUse;}
+    public int getImplementationId() {return implementationId;}
 }
 
 class UnitConfig {
-    // Type of Unit
-    private int type;
+    // Type of Nation.Unit
+    private final String name;
+    private final int startingMovement;
+    private final int attack;
+    private final int defense;
+    private final int[] idsSpecials;
     // IDs for the special
-    private static SpecialMoveConfig[] unitSpecials = {
-            new SpecialMoveConfig(0, "Build city"),
-    };
-    private String name;
-
-    public UnitConfig(int type) {
-        this.type = type;
-    }
-    public int getType() {return type;}
-}
-
-/* Unit list reference at units.txt */
-class Unit {
-    private int type;
-    private boolean isDead;
-    private int movementLeft;
-    static UnitConfig[] unitConfigs = {
-            new UnitConfig(0),
+    public static final SpecialMoveConfig[] specials = {
+            new SpecialMoveConfig("Build city", true, 0)
     };
 
-    PathfinderConfig pathfinderConfig;
-
-    private Tiles.Tile tile;
-    public Unit(int type, Tiles.Tile tile) {
-        this.type = type;
-        this.tile = tile;
-        this.tile.addUnit(this);
-        this.pathfinderConfig = new PathfinderConfig();
+    public UnitConfig(String name, int startingMovement, int attack, int defense, int[] idsSpecials) {
+        this.name = name;
+        this.startingMovement = startingMovement;
+        this.attack = attack;
+        this.defense = defense;
+        this.idsSpecials = idsSpecials;
     }
-    public int getType() {return type;}
-    public boolean getIsDead(){return isDead;}
-    public boolean unitAction(){return false;}
-    // Moves from one point, to the next if it is valid
-    public boolean moveToTile(Tiles.Tile tile) {
-        int distanceToTile = distanceToTile(tile);
-        if (distanceToTile != -1 && distanceToTile <= this.movementLeft) {
-            this.tile.removeUnit(this);
-            this.tile = tile;
-            tile.addUnit(this);
-            this.movementLeft-=distanceToTile;
-            return true;
+    public String getName() {return name;}
+    public int getStartingMovement() {return startingMovement;}
+    public int getAttack() {return attack;}
+    public int getDefense() {return defense;}
+    public SpecialMoveConfig[] getUnitSpecials() {
+        SpecialMoveConfig[] unitSpecials = new SpecialMoveConfig[idsSpecials.length];
+        for (int i = 0; i < idsSpecials.length; i++) {
+            unitSpecials[i] = specials[idsSpecials[i]];
         }
-        return false;
+        return unitSpecials;
     }
-
-    // How many squares (you can travel diagonally) until destination
-    public int distanceToTile(Tiles.Tile tile) {
-        // Pathfind to tile
-        ArrayList<Tiles.Tile> path = this.tile.pathFind(tile, pathfinderConfig);
-
-        // If a path was not found, return false
-        if(path==null) return -1;
-
-        // If all are passed, return length
-        return path.size();
-    }
+    public SpecialMoveConfig getSpecial(int id) {return specials[idsSpecials[id]];}
+    public int getLengthSpecials() {return idsSpecials.length;}
 }
 
 class AssortedUnitUnits {
-    ArrayList<Unit> units;
+    ArrayList<Nation.Unit> units;
     public AssortedUnitUnits() {
-        units = new ArrayList<Unit>();
+        units = new ArrayList<Nation.Unit>();
     }
-    public void addUnit(Unit u){units.add(u);}
-    public Unit get(int i){return units.get(i);}
-    public void remove(Unit u){units.remove(u);}
+    public void addUnit(Nation.Unit u){units.add(u);}
+    public Nation.Unit get(int i){return units.get(i);}
+    public void remove(Nation.Unit u){units.remove(u);}
     public int size(){return units.size();}
 }
 
 class City {
     // The name of the city
     private String name;
-    // The Reference
+    // Tiles when culture higher, autoexpand
     private ArrayList<Tiles.Tile> cityTiles;
+    // Worked tiles, can only be as much as populus
+    // Range is just the ones directly next to/diagonal
+    // Range can increase like Civ Rev courthouse with relatively early tech
+    private ArrayList<Tiles.Tile> workedTiles;
     private int population;
     private Tiles.Tile cityCenterTile;
+    private int range;
     public City(Tiles.Tile cityCenterTile, String name) {
         this.cityCenterTile = cityCenterTile;
+        cityCenterTile.setCityCenter(this);
         this.name = name;
+        this.population = 2;
+        this.cityTiles = new ArrayList<>();
+    }
+    public boolean workTile(Tiles.Tile tile) {
+        if(workedTiles.size() >= population) return false;
+
+        Vert2D delta = Vert2D.delta(cityCenterTile.getPosition(), tile.getPosition());
+        int dist = Math.max(delta.getX(), delta.getY());
+        if(dist == 0 || dist > range) return false;
+
+         
+        return true;
     }
 }
 class Cities {
     private ArrayList<City> cities;
-    public Cities(){}
+    public Cities(){this.cities = new ArrayList<City>();}
     public Cities(ArrayList<City> cities){this.cities = cities;}
     public void addCity(City city) {cities.add(city);}
     public City getCity(int index){return cities.get(index);};
@@ -183,6 +182,72 @@ class Nation {
         public Unit getUnit(int index) {return units.get(index);}
         public ArrayList<Unit> getUnits() {return units;}
     }
+
+    /* Nation.Unit list reference at units.txt */
+    class Unit {
+        private int type;
+        private boolean isDead;
+        private int movementLeft;
+        public static final UnitConfig[] idConfigs = {
+                new UnitConfig("Settler", 20, 0, 0, new int[]{0}),
+                new UnitConfig("Warrior", 1, 1, 1, new int[]{}),
+        };
+
+        PathfinderConfig pathfinderConfig;
+
+        private Tiles.Tile tile;
+        public Unit(int type, Tiles.Tile tile) {
+            this.type = type;
+            this.tile = tile;
+            this.movementLeft = idConfigs[type].getStartingMovement();
+            this.tile.addUnit(this);
+            this.pathfinderConfig = new PathfinderConfig();
+        }
+        public int getType() {return type;}
+        public void setType(int type) {this.type = type;}
+        public boolean getIsDead(){return isDead;}
+        public void setIsDead(boolean isDead){this.isDead = isDead;}
+        public UnitConfig getConfig() {return idConfigs[type];}
+        // I  hate doing this this way but we pass in
+        // the nation for use for some things (Settlers for example)
+        public void unitAction(int idSpecial) {
+            SpecialMoveConfig special = getConfig().getSpecial(idSpecial);
+            int implementationId = special.getImplementationId();
+
+            if(implementationId == 0) {
+                // Build a city
+                getCities().addCity(new City(tile, "Skibidiopolis"));
+            }
+
+            if(special.getKillOnUse()) {
+                this.setIsDead(true);
+            }
+        }
+        // Moves from one point, to the next if it is valid
+        public boolean moveToTile(Tiles.Tile tile) {
+            int distanceToTile = distanceToTile(tile);
+            if (distanceToTile != -1 && distanceToTile <= this.movementLeft) {
+                this.tile.removeUnit(this);
+                this.tile = tile;
+                this.tile.addUnit(this);
+                this.movementLeft-=distanceToTile;
+                return true;
+            }
+            return false;
+        }
+
+        // How many squares (you can travel diagonally) until destination
+        public int distanceToTile(Tiles.Tile tile) {
+            // Pathfind to tile
+            ArrayList<Tiles.Tile> path = this.tile.pathFind(tile, pathfinderConfig);
+
+            // If a path was not found, return false
+            if(path==null) return -1;
+
+            // If all are passed, return length
+            return path.size();
+        }
+    }
 }
 
 // Wrapper for a List of Nations
@@ -196,7 +261,7 @@ class Nations {
                 tile = tiles.getRandomTile();
             }
 
-            Unit initalSettler = new Unit(0, tile);
+            Nation.Unit initalSettler = nation.new Unit(0, tile);
 
             nation.addUnit(initalSettler);
             nations.add(nation);
@@ -212,6 +277,8 @@ class Nations {
 class TileData extends TileType {
     private int type;
     private AssortedUnitUnits units;
+    private City cityCenter = null;
+    private City ownedCity  = null;
     public TileData() {units = new AssortedUnitUnits();}
     public TileData(int type) {this.type = type;}
     private TileData tileData(){return this;}
@@ -219,16 +286,20 @@ class TileData extends TileType {
     public AssortedUnitUnits getUnits() {return units;}
     public String toString() {return String.valueOf(getType());}
     public void setType(int type) {this.type=type;}
-    public void addUnit(Unit unit) {units.addUnit(unit);}
-    public Unit getUnit(int index) {return units.get(index);}
-
-    public void removeUnit(Unit unit) {
+    public void addUnit(Nation.Unit unit) {units.addUnit(unit);}
+    public Nation.Unit getUnit(int index) {return units.get(index);}
+    public void removeUnit(Nation.Unit unit) {
         units.units.remove(unit);
     }
+    public void setCityCenter(City city) {this.cityCenter = city;}
+    public City getCityCenter() {return cityCenter;}
+    public boolean hasCityCenter() {return cityCenter != null;}
+    public void setOwnedCity(City ownedCity) {this.ownedCity = ownedCity;}
+    public City getOwnedCity() {return this.ownedCity;}
+    public boolean hasOwnedCity() {return this.ownedCity != null;}
 }
 
 // Stores the actual tiles data, and use for passing references
-//
 class Tiles {
     TileData[] tiles;
     Vert2D mapSize;
@@ -272,11 +343,21 @@ class Tiles {
         public int getType() {return tileData().getType();}
         public void setType(int type) {tileData().setType(type);}
         public AssortedUnitUnits getUnits() {return tileData().getUnits();}
-        public void addUnit(Unit u) {tileData().addUnit(u);}
-        public Unit getUnit(int index) {return tileData().getUnit(index);}
-
+        public void addUnit(Nation.Unit u) {tileData().addUnit(u);}
+        public Nation.Unit getUnit(int index) {return tileData().getUnit(index);}
+        public void setCityCenter(City city) {tileData().setCityCenter(city);}
+        public City getCityCenter() {return tileData().getCityCenter();}
+        public boolean hasCityCenter() {return tileData().hasCityCenter();}
+        public void removeUnit(Nation.Unit unit) {
+            tileData().removeUnit(unit);
+        }
+        public void setOwnedCity(City ownedCity) {tileData().setOwnedCity(ownedCity);}
+        public City getOwnedCity() {return tileData().getOwnedCity();}
+        public boolean hasOwnedCity() {return tileData().hasOwnedCity();}
         public String toString() {
-            if (tileData().getUnits().size() > 0) {
+            if(tileData().hasCityCenter()) {
+                return "C ";
+            } else if (tileData().getUnits().size() > 0) {
                 return "U" + tileData().getUnits().size(); // Assuming the first unit's type ID represents the unit for display
             } else if (getType() == 0) {
                 return ". "; // Represents one type of tile
@@ -320,9 +401,17 @@ class Tiles {
             }
             return path;
         }
+        public Tile[] getNeighborTiles(){
+            // Get corners, and main directions
+            Tile[] tiles = new Tile[8];
 
-        public void removeUnit(Unit unit) {
-            tileData().removeUnit(unit);
+            for(int i = 0; i < 9; i++) {
+                Vert2D direction = new Vert2D(i%3-1,i/3-1);
+                if(!direction.equals(new Vert2D()))
+                    tiles[i] = getTileFromRelativeXY(direction);
+            }
+
+            return tiles;
         }
     }
 
@@ -369,9 +458,12 @@ public class main {
                 8, 8
         ));
         System.out.println(world);
-        int distance = world.getNations().getNation(0).getUnits().getUnit(0).distanceToTile(
+        Nation.Unit settler = world.getNations().getNation(0).getUnits().getUnit(0);
+        boolean moved = settler.moveToTile(
                 world.getTiles().getTile(0)
         );
-        System.out.println(distance);
+        System.out.println(world);
+        settler.unitAction(0);
+        System.out.println(world);
     }
 }
