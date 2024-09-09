@@ -15,6 +15,9 @@ abstract class TileType {
     abstract public void setOwnedCity(City ownedCity);
     abstract public City getOwnedCity();
     abstract public boolean hasOwnedCity();
+    abstract public void setWorked(boolean worked);
+    abstract public boolean getWorked();
+    abstract public Yields getYields();
     // TODO: sadboy abstract
     // abstract public void popularMonster(sadBoy _sadBoy);
 }
@@ -151,7 +154,24 @@ class City {
         int dist = Math.max(delta.getX(), delta.getY());
         if(dist == 0 || dist > range) return false;
 
-         
+        if(tile.getWorked()) return false;
+        if(tile.getOwnedCity() != this || tile.getOwnedCity() != null) return false;
+
+        tile.setOwnedCity(this);
+        tile.setWorked(true);
+        workedTiles.add(tile);
+
+        return true;
+    }
+    public boolean tileInCitySphereOfInfluence(Tiles.Tile tile) {
+        // TODO:
+        return false;
+    }
+    public boolean stopWorkTile(Tiles.Tile tile) {
+        if(!workedTiles.contains(tile)) return false;
+        if(!tileInCitySphereOfInfluence(tile)) tile.setOwnedCity(null);
+        tile.setWorked(false);
+        workedTiles.remove(tile);
         return true;
     }
 }
@@ -208,8 +228,6 @@ class Nation {
         public boolean getIsDead(){return isDead;}
         public void setIsDead(boolean isDead){this.isDead = isDead;}
         public UnitConfig getConfig() {return idConfigs[type];}
-        // I  hate doing this this way but we pass in
-        // the nation for use for some things (Settlers for example)
         public void unitAction(int idSpecial) {
             SpecialMoveConfig special = getConfig().getSpecial(idSpecial);
             int implementationId = special.getImplementationId();
@@ -272,13 +290,45 @@ class Nations {
     public ArrayList<Nation> getNations(){return nations;};
 }
 
+class Yields {
+    int food;
+    int production;
+    int science;
+    int gold;
+    String name;
+
+    public Yields(String name, int food, int production, int science, int gold) {
+        this.food = food;
+        this.production = production;
+        this.science = science;
+        this.gold = gold;
+    }
+
+    public String getName() {return name;}
+    public int getFood() {return food;}
+    public int getProduction() {return production;}
+    public int getScience() {return science;}
+    public int getGold() {return gold;}
+    public int getTotal() {return food+production+science+gold;}
+}
+
 // The data stored for the tiles
 // Don't use this for getting tile data, use Tiles.tile
 class TileData extends TileType {
     private int type;
+    public static final Yields[] tileYields = new Yields[]{
+            new Yields("Ocean", 1, 0, 0, 0),
+            new Yields("Coast", 1, 0, 1, 0),
+            new Yields("Ice",0, 0, 0, 0),
+            new Yields("Tundra", 1, 0, 0, 0),
+            new Yields("Grassland", 2, 0, 0, 0),
+            new Yields("Plains", 1, 1, 0, 0),
+            new Yields("Desert", 0, 0, 0, 1)
+    };
     private AssortedUnitUnits units;
     private City cityCenter = null;
     private City ownedCity  = null;
+    private boolean worked  = false;
     public TileData() {units = new AssortedUnitUnits();}
     public TileData(int type) {this.type = type;}
     private TileData tileData(){return this;}
@@ -297,6 +347,9 @@ class TileData extends TileType {
     public void setOwnedCity(City ownedCity) {this.ownedCity = ownedCity;}
     public City getOwnedCity() {return this.ownedCity;}
     public boolean hasOwnedCity() {return this.ownedCity != null;}
+    public void setWorked(boolean worked) {this.worked = worked;}
+    public boolean getWorked() {return worked;}
+    public Yields getYields() {return tileYields[getType()];}
 }
 
 // Stores the actual tiles data, and use for passing references
@@ -323,7 +376,7 @@ class Tiles {
         for (int y = 0; y < mapSize.getY(); y++) {
             for (int x = 0; x < mapSize.getX(); x++) {
                 setTileType(
-                        (x/4+y/4+1)%2,
+                        (x/4+y/4+1)%2*2,
                         getIndexFromPoint(
                             new Vert2D(
                                     x, y
@@ -354,18 +407,9 @@ class Tiles {
         public void setOwnedCity(City ownedCity) {tileData().setOwnedCity(ownedCity);}
         public City getOwnedCity() {return tileData().getOwnedCity();}
         public boolean hasOwnedCity() {return tileData().hasOwnedCity();}
-        public String toString() {
-            if(tileData().hasCityCenter()) {
-                return "C ";
-            } else if (tileData().getUnits().size() > 0) {
-                return "U" + tileData().getUnits().size(); // Assuming the first unit's type ID represents the unit for display
-            } else if (getType() == 0) {
-                return ". "; // Represents one type of tile
-            } else if (getType() == 1) {
-                return "# "; // Represents another type of tile
-            }
-            return "? "; // Default character for unknown types
-        }
+        public void setWorked(boolean worked) {tileData().setWorked(worked);}
+        public boolean getWorked() {return tileData().getWorked();}
+        public Yields getYields() {return tileData().getYields();}
         public Vert2D getPosition() {return getPointfromIndex(referenceIndex);}
         public int getReferenceIndex() {return referenceIndex;}
         public Tile getTileFromRelativeXY(Vert2D offset) {
@@ -412,6 +456,18 @@ class Tiles {
             }
 
             return tiles;
+        }
+        public String toString() {
+            if(tileData().hasCityCenter()) {
+                return "C ";
+            } else if (tileData().getUnits().size() > 0) {
+                return "U" + tileData().getUnits().size(); // Assuming the first unit's type ID represents the unit for display
+            } else if (getType() == 0) {
+                return ". "; // Represents one type of tile
+            } else if (getType() == 1) {
+                return "# "; // Represents another type of tile
+            }
+            return "? "; // Default character for unknown types
         }
     }
 
