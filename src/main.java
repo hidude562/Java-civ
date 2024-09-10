@@ -169,17 +169,6 @@ class Nation {
         public ArrayList<Unit> getUnits() {return units;}
     }
     
-    class Buildable {
-        // For building Unit and buildings
-        private int productionComplete;
-        // Should be able to be initalized make a new Unit or City
-        private Object buildable;
-
-        private void completeProduction() {
-            // Add the Building to the city, or the unit to the city's tile 
-        }
-    }
-    
     /* Nation.Unit list reference at units.txt */
     class Unit {
         private int type;
@@ -257,8 +246,8 @@ class Nation {
         private Tiles.Tile cityCenterTile;
         private int range;
         private ArrayList<Building> buildings;
-        
-        //private InConstruction construction;
+        // Used for building things in city (Units, buildings)
+        private Builder builder;
         
         class Building {
             public static BuildingConfig idConfigs[] = {
@@ -269,8 +258,52 @@ class Nation {
             public Building(int type) {
                 this.type = type;
             }
+            public String toString() {
+                return idConfigs[type].getName();
+            }
         }
+        
+        // TODO: This structure could be used for science too 
+        class Builder {
+            // For building Unit and buildings
+            private int productionComplete;
+            private Object buildable;
+            // TODO: Remove when custom production for things are implementde
+            private int productionNeeded = 20;
 
+            public Builder(Object buildable) {
+                this.buildable = buildable;
+                this.productionComplete = 0;
+            }
+            public int getProductionComplete() {
+                return this.productionComplete;
+            }
+            public void increaseProductionComplete(int production) {
+                this.productionComplete += production;
+            }
+            public boolean productionIsComplete() {return productionComplete >= productionNeeded; /* TODO: Just a test */}
+            public void setBuildable(Object buildable) {
+                this.buildable = buildable;
+            }
+            public Object getBuildable() {
+                return this.buildable;
+            }
+            private void completeProduction() {
+                // Add the Building to the city, or the unit to the city's tile
+
+                if (buildable instanceof Unit) {
+                    // Assuming there is a method to add Unit to a Tile in the City or Map class
+                    cityCenterTile.addUnit((Unit) buildable);
+                } else if (buildable instanceof City.Building) {
+                    // Assuming there is an addBuilding method in the City class
+                    addBuilding((City.Building) buildable);
+                }
+
+                productionComplete-=productionNeeded;
+                setBuildable(null);
+            }
+        }
+        
         public City(Tiles.Tile cityCenterTile, String name) {
             this.cityCenterTile = cityCenterTile;
             cityCenterTile.setCityCenter(this);
@@ -279,10 +312,11 @@ class Nation {
             this.cityTiles = new ArrayList<>();
             workedTiles = new ArrayList<>();
             this.range = 1;
+            this.buildings = new ArrayList<>();
 
             autoAssignWorkers();
         }
-        public boolean workTile(Tiles.Tile tile) {
+        public boolean assignWorkTile(Tiles.Tile tile) {
             if(workedTiles.size() >= population) return false;
 
             Vert2D delta = Vert2D.delta(cityCenterTile.getPosition(), tile.getPosition());
@@ -318,7 +352,7 @@ class Nation {
 
             int assignedPopulation = 0;
             for (Tiles.Tile neighbor : neighbors) {
-                if (neighbor != null && workTile(neighbor)) {
+                if (neighbor != null && assignWorkTile(neighbor)) {
                     assignedPopulation++;
                     if (assignedPopulation >= population) break;
                 }
@@ -334,6 +368,42 @@ class Nation {
             tile.setWorked(false);
             workedTiles.remove(tile);
             return true;
+        }
+        private Yields getYields() {
+            Yields yields = new Yields(name, 0, 0, 0, 0);
+            for(Tiles.Tile tile : workedTiles) {
+                System.out.println(yields);
+                yields.add(tile.getYields());
+            }
+            return yields;
+        }
+        public void collectYields() {
+            Yields yields = getYields();
+            builder.increaseProductionComplete(yields.getProduction());
+            population+=yields.getFood();
+        }
+        public void addBuilding(City.Building building) {
+            this.buildings.add(building);
+        }
+        public void setProduction(Object buildable) {builder.setBuildable(buildable);}
+        public boolean isBuildingSomething() {return builder.getBuildable() != null;}
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("--------------------\n");
+            sb.append("The grandious city of "+name);
+            sb.append("\nPopulation: "+population);
+            sb.append("\nRange: "+range);
+            sb.append("\nBuildings:");
+            for(City.Building building : buildings) {
+                sb.append("\n  "+building.toString());
+            }
+            sb.append("\nWorked tiles:");
+            for(Tiles.Tile tile : workedTiles) {
+                sb.append("\n  "+tile.toString());
+            }
+            sb.append("\nYields: "+getYields());
+            sb.append("\n--------------------\n");
+            return sb.toString();
         }
     }
 }
@@ -380,6 +450,15 @@ class Yields {
     public int getScience() {return science;}
     public int getGold() {return gold;}
     public int getTotal() {return food+production+science+gold;}
+    public static Yields addYields(Yields y1, Yields y2) {
+        return new Yields(y1.getName(), y1.getFood()+y2.getFood(), y1.getProduction()+y2.getProduction(), y1.getScience()+y2.getScience(), y1.getGold()+y2.getGold());
+    }
+    public Yields add(Yields y) {
+        return Yields.addYields(this, y);
+    }
+    public String toString() {
+        return String.format("%s: Food: %d, Production: %d, Science: %d, Gold: %d", name, food, production, science, gold);
+    }
 }
 
 // The data stored for the tiles
@@ -601,12 +680,16 @@ public class main {
                 8, 8
         ));
         System.out.println(world);
-        Nation.Unit settler = world.getNations().getNation(0).getUnits().getUnit(0);
+        Nation playerNation = world.getNations().getNation(0);
+        Nation.Unit settler = playerNation.getUnits().getUnit(0);
         boolean moved = settler.moveToTile(
-                world.getTiles().getTile(0)
+                world.getTiles().getTile(world.getTiles().getIndexFromPoint(
+                        new Vert2D(3, 3)
+                ))
         );
         System.out.println(world);
         settler.unitAction(0);
         System.out.println(world);
+        System.out.println(playerNation.getCities().getCity(0).toString());
     }
 }
