@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 
 
 abstract class TileType {
@@ -9,11 +11,11 @@ abstract class TileType {
     abstract public void addUnit(Nation.Unit unit);
     abstract public Nation.Unit getUnit(int index);
     abstract public void removeUnit(Nation.Unit unit);
-    abstract public void setCityCenter(City city);
-    abstract public City getCityCenter();
+    abstract public void setCityCenter(Nation.City city);
+    abstract public Nation.City getCityCenter();
     abstract public boolean hasCityCenter();
-    abstract public void setOwnedCity(City ownedCity);
-    abstract public City getOwnedCity();
+    abstract public void setOwnedCity(Nation.City ownedCity);
+    abstract public Nation.City getOwnedCity();
     abstract public boolean hasOwnedCity();
     abstract public void setWorked(boolean worked);
     abstract public boolean getWorked();
@@ -117,6 +119,17 @@ class UnitConfig {
     public int getLengthSpecials() {return idsSpecials.length;}
 }
 
+class BuildingConfig {
+    private int[] implementationIds;
+    private String name;
+    public BuildingConfig(int[] implementationIds, String name) {
+        this.implementationIds = implementationIds;
+        this.name = name;
+    }
+    public int[] getImplementationIds() {return implementationIds;}
+    public String getName() {return name;}
+}
+
 class AssortedUnitUnits {
     ArrayList<Nation.Unit> units;
     public AssortedUnitUnits() {
@@ -128,60 +141,13 @@ class AssortedUnitUnits {
     public int size(){return units.size();}
 }
 
-class City {
-    // The name of the city
-    private String name;
-    // Tiles when culture higher, autoexpand
-    private ArrayList<Tiles.Tile> cityTiles;
-    // Worked tiles, can only be as much as populus
-    // Range is just the ones directly next to/diagonal
-    // Range can increase like Civ Rev courthouse with relatively early tech
-    private ArrayList<Tiles.Tile> workedTiles;
-    private int population;
-    private Tiles.Tile cityCenterTile;
-    private int range;
-    public City(Tiles.Tile cityCenterTile, String name) {
-        this.cityCenterTile = cityCenterTile;
-        cityCenterTile.setCityCenter(this);
-        this.name = name;
-        this.population = 2;
-        this.cityTiles = new ArrayList<>();
-    }
-    public boolean workTile(Tiles.Tile tile) {
-        if(workedTiles.size() >= population) return false;
-
-        Vert2D delta = Vert2D.delta(cityCenterTile.getPosition(), tile.getPosition());
-        int dist = Math.max(delta.getX(), delta.getY());
-        if(dist == 0 || dist > range) return false;
-
-        if(tile.getWorked()) return false;
-        if(tile.getOwnedCity() != this || tile.getOwnedCity() != null) return false;
-
-        tile.setOwnedCity(this);
-        tile.setWorked(true);
-        workedTiles.add(tile);
-
-        return true;
-    }
-    public boolean tileInCitySphereOfInfluence(Tiles.Tile tile) {
-        // TODO:
-        return false;
-    }
-    public boolean stopWorkTile(Tiles.Tile tile) {
-        if(!workedTiles.contains(tile)) return false;
-        if(!tileInCitySphereOfInfluence(tile)) tile.setOwnedCity(null);
-        tile.setWorked(false);
-        workedTiles.remove(tile);
-        return true;
-    }
-}
 class Cities {
-    private ArrayList<City> cities;
-    public Cities(){this.cities = new ArrayList<City>();}
-    public Cities(ArrayList<City> cities){this.cities = cities;}
-    public void addCity(City city) {cities.add(city);}
-    public City getCity(int index){return cities.get(index);};
-    public ArrayList<City> getCities(){return cities;};
+    private ArrayList<Nation.City> cities;
+    public Cities(){this.cities = new ArrayList<Nation.City>();}
+    public Cities(ArrayList<Nation.City> cities){this.cities = cities;}
+    public void addCity(Nation.City city) {cities.add(city);}
+    public Nation.City getCity(int index){return cities.get(index);};
+    public ArrayList<Nation.City> getCities(){return cities;};
 }
 
 // A nation
@@ -202,7 +168,18 @@ class Nation {
         public Unit getUnit(int index) {return units.get(index);}
         public ArrayList<Unit> getUnits() {return units;}
     }
+    
+    class Buildable {
+        // For building Unit and buildings
+        private int productionComplete;
+        // Should be able to be initalized make a new Unit or City
+        private Object buildable;
 
+        private void completeProduction() {
+            // Add the Building to the city, or the unit to the city's tile 
+        }
+    }
+    
     /* Nation.Unit list reference at units.txt */
     class Unit {
         private int type;
@@ -266,6 +243,99 @@ class Nation {
             return path.size();
         }
     }
+    
+    class City {
+        // The name of the city
+        private String name;
+        // Tiles when culture higher, autoexpand
+        private ArrayList<Tiles.Tile> cityTiles;
+        // Worked tiles, can only be as much as populus
+        // Range is just the ones directly next to/diagonal
+        // Range can increase like Civ Rev courthouse with relatively early tech
+        private ArrayList<Tiles.Tile> workedTiles;
+        private int population;
+        private Tiles.Tile cityCenterTile;
+        private int range;
+        private ArrayList<Building> buildings;
+        
+        //private InConstruction construction;
+        
+        class Building {
+            public static BuildingConfig idConfigs[] = {
+                    new BuildingConfig(new int[]{0}, "Library"),
+                    new BuildingConfig(new int[]{1}, "Market")
+            };
+            private int type;
+            public Building(int type) {
+                this.type = type;
+            }
+        }
+
+        public City(Tiles.Tile cityCenterTile, String name) {
+            this.cityCenterTile = cityCenterTile;
+            cityCenterTile.setCityCenter(this);
+            this.name = name;
+            this.population = 2;
+            this.cityTiles = new ArrayList<>();
+            workedTiles = new ArrayList<>();
+            this.range = 1;
+
+            autoAssignWorkers();
+        }
+        public boolean workTile(Tiles.Tile tile) {
+            if(workedTiles.size() >= population) return false;
+
+            Vert2D delta = Vert2D.delta(cityCenterTile.getPosition(), tile.getPosition());
+            int dist = Math.max(delta.getX(), delta.getY());
+            if(dist == 0 || dist > range) return false;
+
+            if(tile.getWorked()) return false;
+            if(tile.getOwnedCity() != this && tile.getOwnedCity() != null) return false;
+
+            tile.setOwnedCity(this);
+            tile.setWorked(true);
+            workedTiles.add(tile);
+
+            return true;
+        }
+        public void autoAssignWorkers() {
+            // TODO: Courthouse support
+            Tiles.Tile[] neighbors = cityCenterTile.getNeighborTiles();
+
+            // Assume that yields are additive (sum of all yields)
+            Arrays.sort(neighbors, new Comparator<Tiles.Tile>() {
+                @Override
+                public int compare(Tiles.Tile t1, Tiles.Tile t2) {
+                    int t1Yields;
+                    int t2Yields;
+
+                    if(t1==null) t1Yields=-1; else t1Yields = t1.getYields().getTotal();
+                    if(t2==null) t2Yields=-1; else t2Yields = t2.getYields().getTotal();
+
+                    return Integer.compare(t2Yields, t1Yields); // Descending order
+                }
+            });
+
+            int assignedPopulation = 0;
+            for (Tiles.Tile neighbor : neighbors) {
+                if (neighbor != null && workTile(neighbor)) {
+                    assignedPopulation++;
+                    if (assignedPopulation >= population) break;
+                }
+            }
+        }
+        public boolean tileInCitySphereOfInfluence(Tiles.Tile tile) {
+            // TODO:
+            return false;
+        }
+        public boolean stopWorkTile(Tiles.Tile tile) {
+            if(!workedTiles.contains(tile)) return false;
+            if(!tileInCitySphereOfInfluence(tile)) tile.setOwnedCity(null);
+            tile.setWorked(false);
+            workedTiles.remove(tile);
+            return true;
+        }
+    }
 }
 
 // Wrapper for a List of Nations
@@ -275,7 +345,7 @@ class Nations {
         for(int i = 0; i < numCivs; i++) {
             Nation nation = new Nation(i);
             Tiles.Tile tile = tiles.getRandomTile();
-            while(tile.getType()!=1){
+            while(tile.getType()!=2){
                 tile = tiles.getRandomTile();
             }
 
@@ -326,8 +396,8 @@ class TileData extends TileType {
             new Yields("Desert", 0, 0, 0, 1)
     };
     private AssortedUnitUnits units;
-    private City cityCenter = null;
-    private City ownedCity  = null;
+    private Nation.City cityCenter = null;
+    private Nation.City ownedCity  = null;
     private boolean worked  = false;
     public TileData() {units = new AssortedUnitUnits();}
     public TileData(int type) {this.type = type;}
@@ -341,11 +411,11 @@ class TileData extends TileType {
     public void removeUnit(Nation.Unit unit) {
         units.units.remove(unit);
     }
-    public void setCityCenter(City city) {this.cityCenter = city;}
-    public City getCityCenter() {return cityCenter;}
+    public void setCityCenter(Nation.City city) {this.cityCenter = city;}
+    public Nation.City getCityCenter() {return cityCenter;}
     public boolean hasCityCenter() {return cityCenter != null;}
-    public void setOwnedCity(City ownedCity) {this.ownedCity = ownedCity;}
-    public City getOwnedCity() {return this.ownedCity;}
+    public void setOwnedCity(Nation.City ownedCity) {this.ownedCity = ownedCity;}
+    public Nation.City getOwnedCity() {return this.ownedCity;}
     public boolean hasOwnedCity() {return this.ownedCity != null;}
     public void setWorked(boolean worked) {this.worked = worked;}
     public boolean getWorked() {return worked;}
@@ -367,7 +437,12 @@ class Tiles {
     }
 
     // Returns not tile data, but the reference to the tile and acts like it is real, so it has additional access to cool features
-    public Tile getTile(int referenceIndex){return new Tile(referenceIndex);}
+    public Tile getTile(int referenceIndex){
+        if(referenceIndex < 0 || referenceIndex >= mapSize.getX()*mapSize.getY()) {
+            return null;
+        }
+        return new Tile(referenceIndex);
+    }
     public void setTileType(int type, int referenceIndex){tiles[referenceIndex].setType(type);}
     public Vert2D getPointfromIndex(int index){return new Vert2D(index%mapSize.getX(), index/mapSize.getX());}
     public int getIndexFromPoint(Vert2D point){return point.getX() % mapSize.getX() + point.getY() * mapSize.getX();}
@@ -391,21 +466,23 @@ class Tiles {
     // Accesses the reference from the upper Tiles class.
     class Tile extends TileType {
         private final int referenceIndex;
-        public Tile(int referenceIndex){this.referenceIndex = referenceIndex;};
+        public Tile(int referenceIndex){
+            this.referenceIndex = referenceIndex;
+        };
         private TileData tileData(){return tiles[referenceIndex];}
         public int getType() {return tileData().getType();}
         public void setType(int type) {tileData().setType(type);}
         public AssortedUnitUnits getUnits() {return tileData().getUnits();}
         public void addUnit(Nation.Unit u) {tileData().addUnit(u);}
         public Nation.Unit getUnit(int index) {return tileData().getUnit(index);}
-        public void setCityCenter(City city) {tileData().setCityCenter(city);}
-        public City getCityCenter() {return tileData().getCityCenter();}
+        public void setCityCenter(Nation.City city) {tileData().setCityCenter(city);}
+        public Nation.City getCityCenter() {return tileData().getCityCenter();}
         public boolean hasCityCenter() {return tileData().hasCityCenter();}
         public void removeUnit(Nation.Unit unit) {
             tileData().removeUnit(unit);
         }
-        public void setOwnedCity(City ownedCity) {tileData().setOwnedCity(ownedCity);}
-        public City getOwnedCity() {return tileData().getOwnedCity();}
+        public void setOwnedCity(Nation.City ownedCity) {tileData().setOwnedCity(ownedCity);}
+        public Nation.City getOwnedCity() {return tileData().getOwnedCity();}
         public boolean hasOwnedCity() {return tileData().hasOwnedCity();}
         public void setWorked(boolean worked) {tileData().setWorked(worked);}
         public boolean getWorked() {return tileData().getWorked();}
@@ -414,6 +491,10 @@ class Tiles {
         public int getReferenceIndex() {return referenceIndex;}
         public Tile getTileFromRelativeXY(Vert2D offset) {
             try {
+                /*
+                    TODO: for wrapping the world around, the index should
+                    be decremented by world width for going too right as example
+                */
                 return getTile(referenceIndex +
                         getIndexFromPoint(offset));
             } catch(Exception e) {
@@ -449,10 +530,12 @@ class Tiles {
             // Get corners, and main directions
             Tile[] tiles = new Tile[8];
 
-            for(int i = 0; i < 9; i++) {
+            for(int i = 0; i < 8; i++) {
                 Vert2D direction = new Vert2D(i%3-1,i/3-1);
-                if(!direction.equals(new Vert2D()))
-                    tiles[i] = getTileFromRelativeXY(direction);
+                if(!direction.equals(new Vert2D())) {
+                    Tile tile = getTileFromRelativeXY(direction);
+                    tiles[i] = tile;
+                }
             }
 
             return tiles;
@@ -460,6 +543,10 @@ class Tiles {
         public String toString() {
             if(tileData().hasCityCenter()) {
                 return "C ";
+            } else if(tileData().getWorked()){
+                return "W ";
+            } else if(tileData().hasOwnedCity()){
+                return ": ";
             } else if (tileData().getUnits().size() > 0) {
                 return "U" + tileData().getUnits().size(); // Assuming the first unit's type ID represents the unit for display
             } else if (getType() == 0) {
