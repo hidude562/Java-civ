@@ -47,6 +47,7 @@ class Vert2D {
     public static Vert2D add(Vert2D a, Vert2D b) {
         return new Vert2D(a.getX() + b.getX(), a.getY() + b.getY());
     }
+    public static Vert2D abs(Vert2D a) {return new Vert2D(Math.abs(a.getX()), Math.abs(a.getY()));}
     public String toString() {return String.format("(%d, %d)", x, y);}
     public boolean equals(Vert2D o) {return o.getX() == x && o.getY() == y;}
 }
@@ -223,7 +224,7 @@ class Nation extends GameElement {
         }
         public boolean setPath(Tiles.Tile tile) {
             this.path = this.tile.pathFind(tile, getPathfinderConfig());
-            if(this.path == null) return false;
+            if(this.path == null) {this.path = new ArrayList<Tiles.Tile>(); return false;}
             moveUntilCannot();
             return true;
         }
@@ -686,23 +687,17 @@ class Tiles {
                                         neighbor.getPosition()
                                 );
                                 Vert2D deltaTargetDir = Vert2D.delta(optimalDirection, neighborDirection);
-                                if (deltaTargetDir.getX() > -2 && deltaTargetDir.getY() > -2) {
+                                deltaTargetDir = Vert2D.abs(deltaTargetDir);
+                                //System.out.println(deltaTargetDir);
+                                if ((deltaTargetDir.getX() < 1 && deltaTargetDir.getY() < 2) || (deltaTargetDir.getX() < 2 && deltaTargetDir.getY() < 1)) {
                                     System.out.println(neighborDirection);
                                     direction = neighborDirection;
                                     break;
-                                }
-                                if (i > 8) {
-                                    if (deltaTargetDir.getX() > -2 && deltaTargetDir.getY() > -2) {
-                                        System.out.println(neighborDirection);
-                                        direction = neighborDirection;
-                                        break;
-                                    }
                                 }
                             }
                         }
                     }
                 }
-
                 currentTile = currentTile.getTileFromRelativeXY(direction);
                 if(!pathFinderConfig.canGoOnTile(currentTile) || direction.equals(new Vert2D()))
                     return null;
@@ -792,7 +787,7 @@ public class main {
         while(true) {
             settler.setPath(
                     world.getTiles().getTile(world.getTiles().getIndexFromPoint(
-                            new Vert2D(5, 5)
+                            new Vert2D(2, 7)
                     ))
             );
             System.out.println(world);
