@@ -24,6 +24,10 @@ abstract class TileType {
     // abstract public void popularMonster(sadBoy _sadBoy);
 }
 
+abstract class GameElement {
+    abstract public void nextTurn();
+}
+
 class Vert2D {
     private int x;
     private int y;
@@ -85,6 +89,7 @@ class SpecialMoveConfig {
     public int getImplementationId() {return implementationId;}
 }
 
+// TODO: Unit kinda acts like a facade for unitconfig, so an abstract class can be used for better management
 class UnitConfig {
     // Type of Nation.Unit
     private final String name;
@@ -92,17 +97,20 @@ class UnitConfig {
     private final int attack;
     private final int defense;
     private final int[] idsSpecials;
+    PathfinderConfig pathfinderConfig;
+
     // IDs for the special
     public static final SpecialMoveConfig[] specials = {
             new SpecialMoveConfig("Build city", true, 0)
     };
 
-    public UnitConfig(String name, int startingMovement, int attack, int defense, int[] idsSpecials) {
+    public UnitConfig(String name, int startingMovement, int attack, int defense, int[] idsSpecials, PathfinderConfig pathfinderConfig) {
         this.name = name;
         this.startingMovement = startingMovement;
         this.attack = attack;
         this.defense = defense;
         this.idsSpecials = idsSpecials;
+        this.pathfinderConfig = pathfinderConfig;
     }
     public String getName() {return name;}
     public int getStartingMovement() {return startingMovement;}
@@ -117,6 +125,7 @@ class UnitConfig {
     }
     public SpecialMoveConfig getSpecial(int id) {return specials[idsSpecials[id]];}
     public int getLengthSpecials() {return idsSpecials.length;}
+    public PathfinderConfig getPathfinderConfig() {return pathfinderConfig;}
 }
 
 class BuildingConfig {
@@ -141,17 +150,8 @@ class AssortedUnitUnits {
     public int size(){return units.size();}
 }
 
-class Cities {
-    private ArrayList<Nation.City> cities;
-    public Cities(){this.cities = new ArrayList<Nation.City>();}
-    public Cities(ArrayList<Nation.City> cities){this.cities = cities;}
-    public void addCity(Nation.City city) {cities.add(city);}
-    public Nation.City getCity(int index){return cities.get(index);};
-    public ArrayList<Nation.City> getCities(){return cities;};
-}
-
 // A nation
-class Nation {
+class Nation extends GameElement {
     // 0 -> Alexander the Great, 1 -> G. Washington, etc. Each have bonuses and allat.
     private int nation;
     private Cities cities;
@@ -160,36 +160,50 @@ class Nation {
     public Cities getCities() {return cities;}
     public void addUnit(Unit u){units.addUnit(u);}
     public Units getUnits(){return units;}
+    public void nextTurn() {
+        cities.nextTurn();
+        units.nextTurn();
+    }
 
-    class Units {
+    class Units extends GameElement{
         private ArrayList<Unit> units;
         public Units() {this.units = new ArrayList<Unit>();}
         public void addUnit(Unit unit) {units.add(unit);}
         public Unit getUnit(int index) {return units.get(index);}
         public ArrayList<Unit> getUnits() {return units;}
+        public void nextTurn() {
+            for(Unit u : units) {
+                u.nextTurn();
+            }
+        }
     }
-    
+
     /* Nation.Unit list reference at units.txt */
-    class Unit {
+    class Unit extends GameElement {
         private int type;
         private boolean isDead;
         private int movementLeft;
         public static final UnitConfig[] idConfigs = {
-                new UnitConfig("Settler", 20, 0, 0, new int[]{0}),
-                new UnitConfig("Warrior", 1, 1, 1, new int[]{}),
+                new UnitConfig("Settler", 2, 0, 0, new int[]{0}, new PathfinderConfig(true, new int[]{0,1})),
+                new UnitConfig("Warrior", 1, 1, 1, new int[]{}, new PathfinderConfig(true, new int[]{0,1})),
         };
 
-        PathfinderConfig pathfinderConfig;
-
         private Tiles.Tile tile;
+        private ArrayList<Tiles.Tile> path = new ArrayList<>();
+
         public Unit(int type, Tiles.Tile tile) {
             this.type = type;
             this.tile = tile;
-            this.movementLeft = idConfigs[type].getStartingMovement();
+            this.movementLeft = getConfig().getStartingMovement();
             this.tile.addUnit(this);
-            this.pathfinderConfig = new PathfinderConfig();
+        }
+        public Unit(int type) {
+            this.type = type;
+            this.tile = null;
+            this.movementLeft = getConfig().getStartingMovement();
         }
         public int getType() {return type;}
+        public PathfinderConfig getPathfinderConfig() {return idConfigs[type].getPathfinderConfig();}
         public void setType(int type) {this.type = type;}
         public boolean getIsDead(){return isDead;}
         public void setIsDead(boolean isDead){this.isDead = isDead;}
@@ -207,6 +221,18 @@ class Nation {
                 this.setIsDead(true);
             }
         }
+        public boolean setPath(Tiles.Tile tile) {
+            this.path = this.tile.pathFind(tile, getPathfinderConfig());
+            if(this.path == null) return false;
+            moveUntilCannot();
+            return true;
+        }
+        private void moveUntilCannot() {
+            while(this.movementLeft > 0 && this.path.size() > 0) {
+                this.moveToTile(this.path.remove(0));
+            }
+        }
+        public boolean pathIsEmpty() {return this.path.size() == 0;}
         // Moves from one point, to the next if it is valid
         public boolean moveToTile(Tiles.Tile tile) {
             int distanceToTile = distanceToTile(tile);
@@ -219,11 +245,10 @@ class Nation {
             }
             return false;
         }
-
         // How many squares (you can travel diagonally) until destination
         public int distanceToTile(Tiles.Tile tile) {
             // Pathfind to tile
-            ArrayList<Tiles.Tile> path = this.tile.pathFind(tile, pathfinderConfig);
+            ArrayList<Tiles.Tile> path = this.tile.pathFind(tile, getPathfinderConfig());
 
             // If a path was not found, return false
             if(path==null) return -1;
@@ -231,9 +256,12 @@ class Nation {
             // If all are passed, return length
             return path.size();
         }
+        public void nextTurn() {
+            moveUntilCannot(); this.movementLeft = getConfig().getStartingMovement();
+        }
     }
-    
-    class City {
+
+    class City extends GameElement {
         // The name of the city
         private String name;
         // Tiles when culture higher, autoexpand
@@ -248,7 +276,8 @@ class Nation {
         private ArrayList<Building> buildings;
         // Used for building things in city (Units, buildings)
         private Builder builder;
-        
+        private int collectedFood = 0;
+
         class Building {
             public static BuildingConfig idConfigs[] = {
                     new BuildingConfig(new int[]{0}, "Library"),
@@ -262,8 +291,8 @@ class Nation {
                 return idConfigs[type].getName();
             }
         }
-        
-        // TODO: This structure could be used for science too 
+
+        // TODO: This structure could be used for science too
         class Builder {
             // For building Unit and buildings
             private int productionComplete;
@@ -275,11 +304,16 @@ class Nation {
                 this.buildable = buildable;
                 this.productionComplete = 0;
             }
+            public Builder() {
+                this.buildable = null;
+                this.productionComplete = 0;
+            }
             public int getProductionComplete() {
                 return this.productionComplete;
             }
             public void increaseProductionComplete(int production) {
                 this.productionComplete += production;
+                if(productionIsComplete()) completeProduction();
             }
             public boolean productionIsComplete() {return productionComplete >= productionNeeded; /* TODO: Just a test */}
             public void setBuildable(Object buildable) {
@@ -303,7 +337,7 @@ class Nation {
                 setBuildable(null);
             }
         }
-        
+
         public City(Tiles.Tile cityCenterTile, String name) {
             this.cityCenterTile = cityCenterTile;
             cityCenterTile.setCityCenter(this);
@@ -313,6 +347,7 @@ class Nation {
             workedTiles = new ArrayList<>();
             this.range = 1;
             this.buildings = new ArrayList<>();
+            this.builder = new Builder();
 
             autoAssignWorkers();
         }
@@ -320,7 +355,7 @@ class Nation {
             if(workedTiles.size() >= population) return false;
 
             Vert2D delta = Vert2D.delta(cityCenterTile.getPosition(), tile.getPosition());
-            int dist = Math.max(delta.getX(), delta.getY());
+            int dist = Math.max(Math.abs(delta.getX()), Math.abs(delta.getY()));
             if(dist == 0 || dist > range) return false;
 
             if(tile.getWorked()) return false;
@@ -334,6 +369,7 @@ class Nation {
         }
         public void autoAssignWorkers() {
             // TODO: Courthouse support
+
             Tiles.Tile[] neighbors = cityCenterTile.getNeighborTiles();
 
             // Assume that yields are additive (sum of all yields)
@@ -370,18 +406,32 @@ class Nation {
             return true;
         }
         private Yields getYields() {
-            Yields yields = new Yields(name, 0, 0, 0, 0);
+            // Get Tile yields
+            Yields tileYields = new Yields(name, 0, 0, 0, 0);
             for(Tiles.Tile tile : workedTiles) {
-                System.out.println(yields);
-                yields.add(tile.getYields());
+                tileYields = tileYields.add(tile.getYields());
             }
+
+            // Get Citizen yields
+            Yields citizenYields = new Yields(name, 0, population-workedTiles.size(), population, population);
+            Yields yields = tileYields.add(citizenYields);
             return yields;
         }
         public void collectYields() {
             Yields yields = getYields();
             builder.increaseProductionComplete(yields.getProduction());
-            population+=yields.getFood();
+            addFoodPopulus(yields.getFood());
         }
+        public void addFoodPopulus(int food) {
+            collectedFood+=food;
+            int foodToIncrement = getFoodToIncrementPopulation();
+            if(collectedFood >= foodToIncrement) {
+                collectedFood-=foodToIncrement;
+                population++;
+            }
+        }
+        public int getCollectedFood() {return collectedFood;}
+        public int getFoodToIncrementPopulation() {return population*5;}
         public void addBuilding(City.Building building) {
             this.buildings.add(building);
         }
@@ -405,19 +455,40 @@ class Nation {
             sb.append("\n--------------------\n");
             return sb.toString();
         }
+        public void nextTurn() {
+            collectYields();
+            autoAssignWorkers();
+        }
     }
+
+    static class Cities extends GameElement {
+        private ArrayList<City> cities;
+        public Cities(){this.cities = new ArrayList<City>();}
+        public Cities(ArrayList<City> cities){this.cities = cities;}
+        public void addCity(City city) {cities.add(city);}
+        public City getCity(int index){return cities.get(index);};
+        public ArrayList<City> getCities(){return cities;};
+        public void nextTurn() {
+            for(City city : cities) {
+                city.nextTurn();
+            }
+        }
+    }
+
+
 }
 
 // Wrapper for a List of Nations
-class Nations {
+class Nations extends GameElement {
     ArrayList<Nation> nations = new ArrayList<>();
     public Nations(Tiles tiles, int numCivs){
         for(int i = 0; i < numCivs; i++) {
             Nation nation = new Nation(i);
             Tiles.Tile tile = tiles.getRandomTile();
-            while(tile.getType()!=2){
+            while(tile.getType()<=1){
                 tile = tiles.getRandomTile();
             }
+            tile = tiles.getTile(tiles.getIndexFromPoint(new Vert2D(1,2)));
 
             Nation.Unit initalSettler = nation.new Unit(0, tile);
 
@@ -428,6 +499,11 @@ class Nations {
     public Nations(ArrayList<Nation> nations){this.nations = nations;};
     public Nation getNation(int index){return nations.get(index);};
     public ArrayList<Nation> getNations(){return nations;};
+    public void nextTurn() {
+        for(Nation nation : nations) {
+            nation.nextTurn();
+        }
+    }
 }
 
 class Yields {
@@ -530,7 +606,7 @@ class Tiles {
         for (int y = 0; y < mapSize.getY(); y++) {
             for (int x = 0; x < mapSize.getX(); x++) {
                 setTileType(
-                        (x/4+y/4+1)%2*2,
+                        (x/4+y/4+1)%2*4,
                         getIndexFromPoint(
                             new Vert2D(
                                     x, y
@@ -587,18 +663,48 @@ class Tiles {
 
             while(!targetTile.getPosition().equals(currentTile.getPosition())) {
                 Vert2D delta = Vert2D.delta(targetTile.getPosition(), currentTile.getPosition());
+                Vert2D optimalDirection = new Vert2D(
+                        (delta.getX() == 0 ? 0 : 1) * (delta.getX() > 0 ? -1 : 1),
+                        (delta.getY() == 0 ? 0 : 1) * (delta.getY() > 0 ? -1 : 1)
+                );
                 Vert2D direction = new Vert2D();
-                if(delta.getX() > 0)
-                    direction = Vert2D.add(direction, new Vert2D(-1,0));
-                if(delta.getX() < 0)
-                    direction = Vert2D.add(direction, new Vert2D(1,0));
-                if(delta.getY() > 0)
-                    direction = Vert2D.add(direction, new Vert2D(0,-1));
-                if(delta.getY() < 0)
-                    direction = Vert2D.add(direction, new Vert2D(0,1));
+
+                if(pathFinderConfig.canGoOnTile(currentTile.getTileFromRelativeXY(optimalDirection))) {direction = optimalDirection;}
+                else {
+                    Tiles.Tile[] neighbors = currentTile.getNeighborTiles();
+
+                    // 4 Trillion IQ
+                    // It checks the corners first by incrementing by 2 (and ignoring middle tile)
+                    // Then it wraps around for the main parts
+                    for (int i = 0; i < 9 * 2; i += 2) {
+                        // Check corners first
+                        if (i != 4) {
+                            Tiles.Tile neighbor = neighbors[i % 9];
+                            if (neighbor != null && pathFinderConfig.canGoOnTile(neighbor)) {
+                                Vert2D neighborDirection = Vert2D.delta(
+                                        currentTile.getPosition(),
+                                        neighbor.getPosition()
+                                );
+                                Vert2D deltaTargetDir = Vert2D.delta(optimalDirection, neighborDirection);
+                                if (deltaTargetDir.getX() > -2 && deltaTargetDir.getY() > -2) {
+                                    System.out.println(neighborDirection);
+                                    direction = neighborDirection;
+                                    break;
+                                }
+                                if (i > 8) {
+                                    if (deltaTargetDir.getX() > -2 && deltaTargetDir.getY() > -2) {
+                                        System.out.println(neighborDirection);
+                                        direction = neighborDirection;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 currentTile = currentTile.getTileFromRelativeXY(direction);
-                if(!pathFinderConfig.canGoOnTile(currentTile))
+                if(!pathFinderConfig.canGoOnTile(currentTile) || direction.equals(new Vert2D()))
                     return null;
 
                 path.add(currentTile);
@@ -607,9 +713,9 @@ class Tiles {
         }
         public Tile[] getNeighborTiles(){
             // Get corners, and main directions
-            Tile[] tiles = new Tile[8];
+            Tile[] tiles = new Tile[9];
 
-            for(int i = 0; i < 8; i++) {
+            for(int i = 0; i < 9; i++) {
                 Vert2D direction = new Vert2D(i%3-1,i/3-1);
                 if(!direction.equals(new Vert2D())) {
                     Tile tile = getTileFromRelativeXY(direction);
@@ -652,7 +758,7 @@ class Tiles {
         return val.toString();
     }
 }
-class World {
+class World extends GameElement {
     // Nations of the world
     private Nations nations;
 
@@ -669,7 +775,7 @@ class World {
     public Nations getNations() {return nations;}
     public Tiles getTiles() {return tiles;}
     public int getTurn() {return turn;}
-    public void nextTurn() {turn++;}
+    public void nextTurn() {turn++; nations.nextTurn();}
     public String toString() {
         return tiles.toString();
     }
@@ -682,14 +788,28 @@ public class main {
         System.out.println(world);
         Nation playerNation = world.getNations().getNation(0);
         Nation.Unit settler = playerNation.getUnits().getUnit(0);
-        boolean moved = settler.moveToTile(
-                world.getTiles().getTile(world.getTiles().getIndexFromPoint(
-                        new Vert2D(3, 3)
-                ))
-        );
+
+        while(true) {
+            settler.setPath(
+                    world.getTiles().getTile(world.getTiles().getIndexFromPoint(
+                            new Vert2D(5, 5)
+                    ))
+            );
+            System.out.println(world);
+            world.nextTurn();
+            if (settler.pathIsEmpty()) break;
+        }
         System.out.println(world);
         settler.unitAction(0);
         System.out.println(world);
-        System.out.println(playerNation.getCities().getCity(0).toString());
+        Nation.City userCity = playerNation.getCities().getCity(0);
+        System.out.println(userCity.toString());
+        userCity.setProduction(playerNation.new Unit(0));
+        for(int i = 0; i < 10; i++) {
+            world.nextTurn();
+            System.out.println(userCity);
+            userCity.autoAssignWorkers();
+            System.out.println(world);
+        }
     }
 }
