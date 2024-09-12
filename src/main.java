@@ -1,3 +1,4 @@
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -173,7 +174,12 @@ class Nation extends GameElement {
         public Unit getUnit(int index) {return units.get(index);}
         public ArrayList<Unit> getUnits() {return units;}
         public void nextTurn() {
-            for(Unit u : units) {
+            for(int i = 0; i < units.size(); i++) {
+                Unit u = units.get(i);
+                if(u.getIsDead()) {
+                    units.remove(u);
+                    i--;
+                }
                 u.nextTurn();
             }
         }
@@ -203,7 +209,16 @@ class Nation extends GameElement {
             this.tile = null;
             this.movementLeft = getConfig().getStartingMovement();
         }
+        public Unit(Unit u) {
+            this.type = u.getType();
+            this.tile = u.getTile();
+            this.movementLeft = u.getConfig().getStartingMovement();
+        }
         public int getType() {return type;}
+        public Tiles.Tile getTile() {return tile;}
+        public Nation getNation() {
+            return Nation.this;
+        }
         public PathfinderConfig getPathfinderConfig() {return idConfigs[type].getPathfinderConfig();}
         public void setType(int type) {this.type = type;}
         public boolean getIsDead(){return isDead;}
@@ -234,6 +249,29 @@ class Nation extends GameElement {
             }
         }
         public boolean pathIsEmpty() {return this.path.size() == 0;}
+        public boolean attack(Tiles.Tile tile) {
+            if(!tile.hasUnit())
+                return true;
+
+            Unit otherUnit = tile.getUnit(0);
+
+            if(otherUnit.getIsDead())
+                return true;
+            if(otherUnit.getNation() == this.getNation())
+                return true;
+            if(otherUnit.getConfig().getDefense() == 0 && this.getConfig().getAttack() > 0) {
+                // Capture unit (Mark other unit for deletion and copy to new nation)
+                units.addUnit(otherUnit);
+                otherUnit.setIsDead(true);
+                return true;
+            }
+            if(otherUnit.getConfig().getDefense() < this.getConfig().getAttack())
+                return true;
+
+            setIsDead(true);
+            return false;
+        }
+
         // Moves from one point, to the next if it is valid
         public boolean moveToTile(Tiles.Tile tile) {
             int distanceToTile = distanceToTile(tile);
@@ -563,6 +601,7 @@ class TileData extends TileType {
     public String toString() {return String.valueOf(getType());}
     public void setType(int type) {this.type=type;}
     public void addUnit(Nation.Unit unit) {units.addUnit(unit);}
+    public boolean hasUnit() {return units.size() > 0;}
     public Nation.Unit getUnit(int index) {return units.get(index);}
     public void removeUnit(Nation.Unit unit) {
         units.units.remove(unit);
@@ -576,6 +615,7 @@ class TileData extends TileType {
     public void setWorked(boolean worked) {this.worked = worked;}
     public boolean getWorked() {return worked;}
     public Yields getYields() {return tileYields[getType()];}
+    public Nation getNationality() {if(hasUnit()) return getUnit(0).getNation(); return null;}
 }
 
 // Stores the actual tiles data, and use for passing references
@@ -604,6 +644,7 @@ class Tiles {
     public int getIndexFromPoint(Vert2D point){return point.getX() % mapSize.getX() + point.getY() * mapSize.getX();}
     public Tile getRandomTile() {return getTile((int) (Math.random() * mapSize.getX()*mapSize.getY()));}
     public void newWorld() {
+        // TODO: Just a test
         for (int y = 0; y < mapSize.getY(); y++) {
             for (int x = 0; x < mapSize.getX(); x++) {
                 setTileType(
@@ -630,6 +671,7 @@ class Tiles {
         public void setType(int type) {tileData().setType(type);}
         public AssortedUnitUnits getUnits() {return tileData().getUnits();}
         public void addUnit(Nation.Unit u) {tileData().addUnit(u);}
+        public boolean hasUnit() {return tileData().hasUnit();}
         public Nation.Unit getUnit(int index) {return tileData().getUnit(index);}
         public void setCityCenter(Nation.City city) {tileData().setCityCenter(city);}
         public Nation.City getCityCenter() {return tileData().getCityCenter();}
@@ -645,6 +687,9 @@ class Tiles {
         public Yields getYields() {return tileData().getYields();}
         public Vert2D getPosition() {return getPointfromIndex(referenceIndex);}
         public int getReferenceIndex() {return referenceIndex;}
+        public Nation getNationality() {
+            return tileData().getNationality();
+        }
         public Tile getTileFromRelativeXY(Vert2D offset) {
             try {
                 /*
@@ -658,7 +703,13 @@ class Tiles {
             }
         }
         public ArrayList<Tiles.Tile> pathFind(Tiles.Tile targetTile, PathfinderConfig pathFinderConfig) {
-            // TODO: Better pathfinding
+            // TODO: Better pathfinding (But still fast)
+
+            /*
+                This is a convex pathfinder algorithm
+                It finds the best path in linear time
+                But it will only always work when it is a convex shape
+             */
             ArrayList<Tiles.Tile> path = new ArrayList<>();
             Tiles.Tile currentTile = this;
 
@@ -778,7 +829,7 @@ class World extends GameElement {
 public class main {
     public static void main(String[] args) {
         World world = new World(new Vert2D(
-                8, 8
+                32, 32
         ));
         System.out.println(world);
         Nation playerNation = world.getNations().getNation(0);
@@ -787,7 +838,7 @@ public class main {
         while(true) {
             settler.setPath(
                     world.getTiles().getTile(world.getTiles().getIndexFromPoint(
-                            new Vert2D(2, 7)
+                            new Vert2D(5, 7)
                     ))
             );
             System.out.println(world);
@@ -800,7 +851,7 @@ public class main {
         Nation.City userCity = playerNation.getCities().getCity(0);
         System.out.println(userCity.toString());
         userCity.setProduction(playerNation.new Unit(0));
-        for(int i = 0; i < 10; i++) {
+        for(int i = 0; i < 2; i++) {
             world.nextTurn();
             System.out.println(userCity);
             userCity.autoAssignWorkers();
