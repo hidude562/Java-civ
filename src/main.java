@@ -177,7 +177,8 @@ class Nation extends GameElement {
             for(int i = 0; i < units.size(); i++) {
                 Unit u = units.get(i);
                 if(u.getIsDead()) {
-                    units.remove(u);
+                    System.out.println("DEAD");
+                    units.remove(i);
                     i--;
                 }
                 u.nextTurn();
@@ -316,6 +317,14 @@ class Nation extends GameElement {
         // Used for building things in city (Units, buildings)
         private Builder builder;
         private int collectedFood = 0;
+
+        public int getPopulation() {
+            return population;
+        }
+
+        public Nation getNation() {
+            return Nation.this;
+        }
 
         class Building {
             public static BuildingConfig idConfigs[] = {
@@ -513,8 +522,6 @@ class Nation extends GameElement {
             }
         }
     }
-
-
 }
 
 // Wrapper for a List of Nations
@@ -527,7 +534,6 @@ class Nations extends GameElement {
             while(tile.getType()<=1){
                 tile = tiles.getRandomTile();
             }
-            tile = tiles.getTile(tiles.getIndexFromPoint(new Vert2D(1,2)));
 
             Nation.Unit initalSettler = nation.new Unit(0, tile);
 
@@ -813,17 +819,139 @@ class World extends GameElement {
 
     private int turn = 0;
 
+    private ArrayList<AI> ais = new ArrayList<>();
+
     public World(Vert2D size) {
         tiles = new Tiles(size);
         tiles.newWorld();
-        nations =  new Nations(tiles, 1);
+        nations =  new Nations(tiles, 2);
+
+        for (int i = 1; i < nations.getNations().size(); i++) {
+            ais.add(new AI(nations.getNation(i), this));
+        }
     }
     public Nations getNations() {return nations;}
     public Tiles getTiles() {return tiles;}
     public int getTurn() {return turn;}
-    public void nextTurn() {turn++; nations.nextTurn();}
+    public void nextTurn() {
+        turn++;
+        nations.nextTurn();
+
+        // Let AIs take their turns
+        for (AI ai : ais) {
+            ai.takeTurn();
+        }
+    }
     public String toString() {
         return tiles.toString();
+    }
+}
+class AI {
+    private Nation nation;
+    private World world;
+
+    public AI(Nation nation, World world) {
+        this.nation = nation;
+        this.world = world;
+    }
+
+    public void takeTurn() {
+        // Manage cities
+        for (Nation.City city : nation.getCities().getCities()) {
+            manageCity(city);
+        }
+
+        // Manage units
+        for (Nation.Unit unit : nation.getUnits().getUnits()) {
+            manageUnit(unit);
+        }
+    }
+
+    private void manageCity(Nation.City city) {
+        // If not building anything, choose something to build
+        if (!city.isBuildingSomething()) {
+            if (city.getPopulation() > nation.getUnits().getUnits().size()) {
+                // Build a unit
+                city.setProduction(nation.new Unit(1)); // Warrior
+            } else {
+                // Build a building (assuming you have implemented buildings)
+                // city.setProduction(city.new Building(0)); // Library
+            }
+        }
+
+        // Optimize worked tiles
+        city.autoAssignWorkers();
+    }
+
+    private void manageUnit(Nation.Unit unit) {
+        if (unit.getType() == 0) { // Settler
+            handleSettler(unit);
+        } else if (unit.getType() == 1) { // Warrior
+            handleWarrior(unit);
+        }
+    }
+
+    private void handleSettler(Nation.Unit settler) {
+        if (settler.pathIsEmpty()) {
+            // Find a good spot to settle
+            Tiles.Tile bestTile = findBestSettleLocation(settler);
+            if (bestTile != null) {
+                settler.setPath(bestTile);
+            }
+        }
+
+        // If we're on a good spot, found a city
+        if (isGoodSettleLocation(settler.getTile())) {
+            settler.unitAction(0); // Found city
+        }
+    }
+
+    private void handleWarrior(Nation.Unit warrior) {
+        if (warrior.pathIsEmpty()) {
+            // Find the nearest enemy unit or city
+            Tiles.Tile target = findNearestEnemyOrCity(warrior);
+            if (target != null) {
+                warrior.setPath(target);
+            } else {
+                // Explore randomly
+                Tiles.Tile randomTile = world.getTiles().getRandomTile();
+                while(!warrior.setPath(randomTile));
+            }
+        }
+    }
+
+    private Tiles.Tile findBestSettleLocation(Nation.Unit settler) {
+        // This is a very basic implementation. You might want to make this smarter.
+        Tiles.Tile currentTile = settler.getTile();
+        Tiles.Tile[] neighbors = currentTile.getNeighborTiles();
+
+        for (Tiles.Tile tile : neighbors) {
+            if (tile != null && isGoodSettleLocation(tile)) {
+                return tile;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean isGoodSettleLocation(Tiles.Tile tile) {
+        // This is a very basic check. You might want to make this smarter.
+        return tile.getType() == 4 || tile.getType() == 5; // Grassland or Plains
+    }
+
+    private Tiles.Tile findNearestEnemyOrCity(Nation.Unit unit) {
+        // This is a very basic implementation. You might want to implement a proper search algorithm.
+        Tiles.Tile currentTile = unit.getTile();
+        Tiles.Tile[] neighbors = currentTile.getNeighborTiles();
+
+        for (Tiles.Tile tile : neighbors) {
+            if (tile != null && (tile.hasUnit() && tile.getUnit(0).getNation() != nation) ||
+                    (tile.hasCityCenter() && tile.getCityCenter().getNation() != nation)) {
+                return tile;
+            }
+        }
+
+        return null;
     }
 }
 public class main {
@@ -851,10 +979,17 @@ public class main {
         Nation.City userCity = playerNation.getCities().getCity(0);
         System.out.println(userCity.toString());
         userCity.setProduction(playerNation.new Unit(0));
-        for(int i = 0; i < 2; i++) {
+        for(int i = 0; i < 50; i++) {
             world.nextTurn();
             System.out.println(userCity);
             userCity.autoAssignWorkers();
+            if(!userCity.isBuildingSomething()) {
+                settler.setPath(
+                        world.getTiles().getTile(world.getTiles().getIndexFromPoint(
+                                new Vert2D(5, 5)
+                        ))
+                );
+            }
             System.out.println(world);
         }
     }
