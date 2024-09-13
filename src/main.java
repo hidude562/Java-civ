@@ -215,8 +215,14 @@ class Nation extends GameElement {
             this.tile = u.getTile();
             this.movementLeft = u.getConfig().getStartingMovement();
         }
+        public Unit(Unit u, Tiles.Tile tile) {
+            this.type = u.getType();
+            this.tile = tile;
+            this.movementLeft = u.getConfig().getStartingMovement();
+        }
         public int getType() {return type;}
         public Tiles.Tile getTile() {return tile;}
+        protected void setTile(Tiles.Tile tile) {this.tile = tile;}
         public Nation getNation() {
             return Nation.this;
         }
@@ -326,6 +332,10 @@ class Nation extends GameElement {
             return Nation.this;
         }
 
+        public Tiles.Tile getCityCenterTile() {
+            return cityCenterTile;
+        }
+
         class Building {
             public static BuildingConfig idConfigs[] = {
                     new BuildingConfig(new int[]{0}, "Library"),
@@ -375,7 +385,8 @@ class Nation extends GameElement {
 
                 if (buildable instanceof Unit) {
                     // Assuming there is a method to add Unit to a Tile in the City or Map class
-                    cityCenterTile.addUnit((Unit) buildable);
+                    Unit u = new Unit((Unit) buildable, cityCenterTile);
+                    units.addUnit(u);
                 } else if (buildable instanceof City.Building) {
                     // Assuming there is an addBuilding method in the City class
                     addBuilding((City.Building) buildable);
@@ -408,6 +419,7 @@ class Nation extends GameElement {
 
             if(tile.getWorked()) return false;
             if(tile.getOwnedCity() != this && tile.getOwnedCity() != null) return false;
+            if(tile.hasCityCenter()) return false;
 
             tile.setOwnedCity(this);
             tile.setWorked(true);
@@ -654,7 +666,7 @@ class Tiles {
         for (int y = 0; y < mapSize.getY(); y++) {
             for (int x = 0; x < mapSize.getX(); x++) {
                 setTileType(
-                        (x/4+y/4+1)%2*4,
+                        4,
                         getIndexFromPoint(
                             new Vert2D(
                                     x, y
@@ -719,6 +731,8 @@ class Tiles {
             ArrayList<Tiles.Tile> path = new ArrayList<>();
             Tiles.Tile currentTile = this;
 
+            if(!pathFinderConfig.canGoOnTile(targetTile)) return null;
+
             while(!targetTile.getPosition().equals(currentTile.getPosition())) {
                 Vert2D delta = Vert2D.delta(targetTile.getPosition(), currentTile.getPosition());
                 Vert2D optimalDirection = new Vert2D(
@@ -777,6 +791,20 @@ class Tiles {
 
             return tiles;
         }
+        public boolean canBuildCityHere() {
+            if(tileData().getType() < 2)
+                return false;
+
+            Tile[] neighbors = getNeighborTiles();
+            for(Tile t : neighbors) {
+                System.out.println(getPosition());
+                if(t!=null && t.hasCityCenter()) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
         public String toString() {
             if(tileData().hasCityCenter()) {
                 return "C ";
@@ -824,7 +852,7 @@ class World extends GameElement {
     public World(Vert2D size) {
         tiles = new Tiles(size);
         tiles.newWorld();
-        nations =  new Nations(tiles, 2);
+        nations =  new Nations(tiles, 1);
 
         for (int i = 1; i < nations.getNations().size(); i++) {
             ais.add(new AI(nations.getNation(i), this));
@@ -940,17 +968,20 @@ class AI {
     }
 
     private Tiles.Tile findNearestEnemyOrCity(Nation.Unit unit) {
+        /*
         // This is a very basic implementation. You might want to implement a proper search algorithm.
         Tiles.Tile currentTile = unit.getTile();
         Tiles.Tile[] neighbors = currentTile.getNeighborTiles();
 
         for (Tiles.Tile tile : neighbors) {
-            if (tile != null && (tile.hasUnit() && tile.getUnit(0).getNation() != nation) ||
-                    (tile.hasCityCenter() && tile.getCityCenter().getNation() != nation)) {
-                return tile;
+            if(tile != null) {
+                if ((tile.hasUnit() && tile.getUnit(0).getNation() != nation) ||
+                        (tile.hasCityCenter() && tile.getCityCenter().getNation() != nation)) {
+                    return tile;
+                }
             }
         }
-
+        */
         return null;
     }
 }
@@ -961,36 +992,51 @@ public class main {
         ));
         System.out.println(world);
         Nation playerNation = world.getNations().getNation(0);
-        Nation.Unit settler = playerNation.getUnits().getUnit(0);
+        {
+            Nation.Unit settler = playerNation.getUnits().getUnit(0);
 
-        while(true) {
-            settler.setPath(
-                    world.getTiles().getTile(world.getTiles().getIndexFromPoint(
-                            new Vert2D(5, 7)
-                    ))
-            );
+            while (true) {
+                settler.setPath(
+                        world.getTiles().getTile(world.getTiles().getIndexFromPoint(
+                                new Vert2D(5, 7)
+                        ))
+                );
+                System.out.println(world);
+                world.nextTurn();
+                if (settler.pathIsEmpty()) break;
+            }
             System.out.println(world);
-            world.nextTurn();
-            if (settler.pathIsEmpty()) break;
+            settler.unitAction(0);
+            System.out.println(world);
         }
-        System.out.println(world);
-        settler.unitAction(0);
-        System.out.println(world);
+
         Nation.City userCity = playerNation.getCities().getCity(0);
         System.out.println(userCity.toString());
         userCity.setProduction(playerNation.new Unit(0));
-        for(int i = 0; i < 50; i++) {
+
+        for(int t = 0; t < 50; t++) {
             world.nextTurn();
-            System.out.println(userCity);
-            userCity.autoAssignWorkers();
-            if(!userCity.isBuildingSomething()) {
-                settler.setPath(
-                        world.getTiles().getTile(world.getTiles().getIndexFromPoint(
-                                new Vert2D(5, 5)
-                        ))
-                );
+            for (Nation.City c : playerNation.getCities().getCities()) {
+                c.autoAssignWorkers();
+                if (!c.isBuildingSomething()) {
+                    Nation.Unit newUnit = playerNation.getUnits().getUnit(0);
+
+                    for (int i = 0; i < 4; i++) {
+                        // Find city spot
+                        Tiles.Tile citySpot = newUnit.getTile().getTileFromRelativeXY(
+                                new Vert2D(i % 2 * 4 - 2, (i) / 2 * 4 - 2)
+                        );
+                        if (citySpot.canBuildCityHere()) {
+                            if (newUnit.setPath(
+                                    citySpot
+                            ))
+                                newUnit.unitAction(0);
+                        }
+                    }
+                    c.setProduction(newUnit);
+                }
+                System.out.println(world);
             }
-            System.out.println(world);
         }
     }
 }
