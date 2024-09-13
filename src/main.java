@@ -177,7 +177,6 @@ class Nation extends GameElement {
             for(int i = 0; i < units.size(); i++) {
                 Unit u = units.get(i);
                 if(u.getIsDead()) {
-                    System.out.println("DEAD");
                     units.remove(i);
                     i--;
                 }
@@ -730,7 +729,6 @@ class Tiles {
              */
             ArrayList<Tiles.Tile> path = new ArrayList<>();
             Tiles.Tile currentTile = this;
-
             if(!pathFinderConfig.canGoOnTile(targetTile)) return null;
 
             while(!targetTile.getPosition().equals(currentTile.getPosition())) {
@@ -759,9 +757,7 @@ class Tiles {
                                 );
                                 Vert2D deltaTargetDir = Vert2D.delta(optimalDirection, neighborDirection);
                                 deltaTargetDir = Vert2D.abs(deltaTargetDir);
-                                //System.out.println(deltaTargetDir);
                                 if ((deltaTargetDir.getX() < 1 && deltaTargetDir.getY() < 2) || (deltaTargetDir.getX() < 2 && deltaTargetDir.getY() < 1)) {
-                                    System.out.println(neighborDirection);
                                     direction = neighborDirection;
                                     break;
                                 }
@@ -794,10 +790,10 @@ class Tiles {
         public boolean canBuildCityHere() {
             if(tileData().getType() < 2)
                 return false;
+            if(tileData().hasCityCenter()) return false;
 
             Tile[] neighbors = getNeighborTiles();
             for(Tile t : neighbors) {
-                System.out.println(getPosition());
                 if(t!=null && t.hasCityCenter()) {
                     return false;
                 }
@@ -808,16 +804,16 @@ class Tiles {
         public String toString() {
             if(tileData().hasCityCenter()) {
                 return "C ";
+            } else if (tileData().getUnits().size() > 0) {
+                return "U" + tileData().getUnits().size(); // Assuming the first unit's type ID represents the unit for display
             } else if(tileData().getWorked()){
                 return "W ";
             } else if(tileData().hasOwnedCity()){
                 return ": ";
-            } else if (tileData().getUnits().size() > 0) {
-                return "U" + tileData().getUnits().size(); // Assuming the first unit's type ID represents the unit for display
             } else if (getType() == 0) {
-                return ". "; // Represents one type of tile
+                return ". ";
             } else if (getType() == 1) {
-                return "# "; // Represents another type of tile
+                return "# ";
             }
             return "? "; // Default character for unknown types
         }
@@ -998,7 +994,7 @@ public class main {
             while (true) {
                 settler.setPath(
                         world.getTiles().getTile(world.getTiles().getIndexFromPoint(
-                                new Vert2D(5, 7)
+                                new Vert2D(12, 12)
                         ))
                 );
                 System.out.println(world);
@@ -1019,24 +1015,37 @@ public class main {
             for (Nation.City c : playerNation.getCities().getCities()) {
                 c.autoAssignWorkers();
                 if (!c.isBuildingSomething()) {
-                    Nation.Unit newUnit = playerNation.getUnits().getUnit(0);
-
-                    for (int i = 0; i < 4; i++) {
-                        // Find city spot
-                        Tiles.Tile citySpot = newUnit.getTile().getTileFromRelativeXY(
-                                new Vert2D(i % 2 * 4 - 2, (i) / 2 * 4 - 2)
-                        );
-                        if (citySpot.canBuildCityHere()) {
-                            if (newUnit.setPath(
-                                    citySpot
-                            ))
-                                newUnit.unitAction(0);
+                    c.setProduction(playerNation.new Unit((int) (Math.random() * 2)));
+                }
+            }
+            for(Nation.Unit u : playerNation.getUnits().getUnits()) {
+                if(u.getType() == 0) {
+                    if(u.pathIsEmpty()) {
+                        if (u.getTile().canBuildCityHere()) {
+                            u.unitAction(0);
+                        } else {
+                            for (int i = 0; i < 4; i++) {
+                                // Find city spot
+                                Tiles.Tile citySpot = u.getTile().getTileFromRelativeXY(
+                                        new Vert2D((i%2) * (i/2*2-1) * 3, ((i+1)%2) * (i/2*2-1) * 3)
+                                );
+                                if (citySpot != null && citySpot.canBuildCityHere()) {
+                                    if (u.setPath(
+                                            citySpot
+                                    )) {
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
-                    c.setProduction(newUnit);
+                } else if(u.getType() == 1) {
+                    if(u.pathIsEmpty()) {
+                        u.setPath(world.getTiles().getRandomTile());
+                    }
                 }
-                System.out.println(world);
             }
+            System.out.println(world);
         }
     }
 }
