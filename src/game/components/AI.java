@@ -17,7 +17,7 @@ class AI {
 
         // Manage units
         for (int i = 0; i < nation.getUnits().size(); i++) {
-            Nation.Unit u = nation.getUnits().getUnit(i);
+            Unit u = nation.getUnits().getUnit(i);
             manageUnit(u);
         }
     }
@@ -25,11 +25,11 @@ class AI {
     private void manageCity(City city) {
         city.autoAssignWorkers();
         if (!city.isBuildingSomething()) {
-            city.setProduction(nation.new Unit((int) (Math.random() * 2)));
+            city.setProduction(new Unit(nation, (int) (Math.random() * 2)));
         }
     }
 
-    private void manageUnit(Nation.Unit unit) {
+    private void manageUnit(Unit unit) {
         if (unit.getType() == 0) { // Settler
             handleSettler(unit);
         } else if (unit.getType() == 1) { // Warrior
@@ -37,7 +37,7 @@ class AI {
         }
     }
 
-    private void handleSettler(Nation.Unit settler) {
+    private void handleSettler(Unit settler) {
         // Currently finds empty spot in a kinda 3 tile up down left right direction
         if (settler.pathIsEmpty()) {
             if (settler.getTile().canBuildCityHere()) {
@@ -60,7 +60,7 @@ class AI {
         }
     }
 
-    private void handleWarrior(Nation.Unit warrior) {
+    private void handleWarrior(Unit warrior) {
         if (warrior.pathIsEmpty()) {
             // Find the nearest enemy unit or city
             Tiles.Tile target = findNearestEnemyOrCity(warrior);
@@ -74,7 +74,7 @@ class AI {
         }
     }
 
-    private Tiles.Tile findBestSettleLocation(Nation.Unit settler) {
+    private Tiles.Tile findBestSettleLocation(Unit settler) {
         // This is a very basic implementation. You might want to make this smarter.
         Tiles.Tile currentTile = settler.getTile();
         Tiles.Tile[] neighbors = currentTile.getNeighborTiles();
@@ -93,7 +93,7 @@ class AI {
         return tile.getType() == 4 || tile.getType() == 5; // Grassland or Plains
     }
 
-    private Tiles.Tile findNearestEnemyOrCity(Nation.Unit unit) {
+    private Tiles.Tile findNearestEnemyOrCity(Unit unit) {
         /*
         // This is a very basic implementation. You might want to implement a proper search algorithm.
         Tiles.Tile currentTile = unit.getTile();

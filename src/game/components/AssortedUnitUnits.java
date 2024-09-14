@@ -3,21 +3,21 @@ package game.components;
 import java.util.ArrayList;
 
 class AssortedUnitUnits {
-    ArrayList<Nation.Unit> units;
+    ArrayList<Unit> units;
 
     public AssortedUnitUnits() {
-        units = new ArrayList<Nation.Unit>();
+        units = new ArrayList<Unit>();
     }
 
-    public void addUnit(Nation.Unit u) {
+    public void addUnit(Unit u) {
         units.add(u);
     }
 
-    public Nation.Unit get(int i) {
+    public Unit get(int i) {
         return units.get(i);
     }
 
-    public void remove(Nation.Unit u) {
+    public void remove(Unit u) {
         units.remove(u);
     }
 

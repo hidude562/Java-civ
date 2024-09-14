@@ -83,7 +83,7 @@ class Tiles {
             return tileData().getUnits();
         }
 
-        public void addUnit(Nation.Unit u) {
+        public void addUnit(Unit u) {
             tileData().addUnit(u);
         }
 
@@ -91,7 +91,7 @@ class Tiles {
             return tileData().hasUnit();
         }
 
-        public Nation.Unit getUnit(int index) {
+        public Unit getUnit(int index) {
             return tileData().getUnit(index);
         }
 
@@ -107,7 +107,7 @@ class Tiles {
             return tileData().hasCityCenter();
         }
 
-        public void removeUnit(Nation.Unit unit) {
+        public void removeUnit(Unit unit) {
             tileData().removeUnit(unit);
         }
 

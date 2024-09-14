@@ -97,9 +97,9 @@ class City extends GameElement {
         private void completeProduction() {
             // Add the Building to the city, or the unit to the city's tile
 
-            if (buildable instanceof Nation.Unit) {
+            if (buildable instanceof Unit) {
                 // Assuming there is a method to add Unit to a Tile in the City or Map class
-                Nation.Unit u = nation.new Unit((Nation.Unit) buildable, cityCenterTile);
+                Unit u = new Unit(nation, (Unit) buildable, cityCenterTile);
                 nation.getUnits().addUnit(u);
             } else if (buildable instanceof Building) {
                 // Assuming there is an addBuilding method in the City class

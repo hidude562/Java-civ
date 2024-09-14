@@ -8,7 +8,7 @@ public class main {
         System.out.println(world);
         Nation playerNation = world.getNations().getNation(0);
         {
-            Nation.Unit settler = playerNation.getUnits().getUnit(0);
+            Unit settler = playerNation.getUnits().getUnit(0);
 
             while (true) {
                 settler.setPath(
@@ -27,7 +27,7 @@ public class main {
 
         City userCity = playerNation.getCities().getCity(0);
         System.out.println(userCity.toString());
-        userCity.setProduction(playerNation.new Unit(0));
+        userCity.setProduction(new Unit(playerNation, 0));
 
         for(int t = 0; t < 150; t++) {
             world.nextTurn();

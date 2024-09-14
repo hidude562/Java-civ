@@ -46,7 +46,7 @@ class TileData extends TileType {
         this.type = type;
     }
 
-    public void addUnit(Nation.Unit unit) {
+    public void addUnit(Unit unit) {
         units.addUnit(unit);
     }
 
@@ -54,11 +54,11 @@ class TileData extends TileType {
         return units.size() > 0;
     }
 
-    public Nation.Unit getUnit(int index) {
+    public Unit getUnit(int index) {
         return units.get(index);
     }
 
-    public void removeUnit(Nation.Unit unit) {
+    public void removeUnit(Unit unit) {
         units.units.remove(unit);
     }
 
@@ -99,7 +99,12 @@ class TileData extends TileType {
     }
 
     public Nation getNationality() {
-        if (hasUnit()) return getUnit(0).getNation();
+        for(int i = 0; i < units.size(); i++) {
+            Unit u = units.get(i);
+            if(!u.getIsDead()) {
+                return u.getNation();
+            }
+        }
         return null;
     }
 }

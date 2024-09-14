@@ -10,11 +10,11 @@ class Nations extends GameElement {
         for (int i = 0; i < numCivs; i++) {
             Nation nation = new Nation(i);
             Tiles.Tile tile = tiles.getRandomTile();
-            while (tile.getType() <= 1) {
+            while (tile.getType() <= 1 || tile.hasUnit()) {
                 tile = tiles.getRandomTile();
             }
 
-            Nation.Unit initalSettler = nation.new Unit(0, tile);
+            Unit initalSettler = new Unit(nation, 0, tile);
 
             nation.addUnit(initalSettler);
             nations.add(nation);

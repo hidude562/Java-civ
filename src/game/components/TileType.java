@@ -9,11 +9,11 @@ abstract class TileType {
 
     abstract public void setType(int type);
 
-    abstract public void addUnit(Nation.Unit unit);
+    abstract public void addUnit(Unit unit);
 
-    abstract public Nation.Unit getUnit(int index);
+    abstract public Unit getUnit(int index);
 
-    abstract public void removeUnit(Nation.Unit unit);
+    abstract public void removeUnit(Unit unit);
 
     abstract public void setCityCenter(City city);
 
