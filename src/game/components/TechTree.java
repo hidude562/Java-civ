@@ -74,11 +74,11 @@ class TechTree {
             new TechnologyData("Space exploration", new int[]{29, 31, 34}),
             new TechnologyData("Artificial Intelligence", new int[]{35}),
     };
-    private ArrayList<Integer> techs;
+    private boolean[] techsHave;
     private int scienceProgress;
     private int researchingTech;
     public TechTree() {
-        this.techs = new ArrayList<Integer>();
+        this.techsHave = new boolean[techTree.length];
         this.scienceProgress = 0;
         this.researchingTech = -1;
     }
@@ -88,26 +88,64 @@ class TechTree {
         int techLevel = (researchingTech/4);
         return (techLevel * techLevel * 15) + 20;
     }
-    public boolean techIsCompleted() {
+    public boolean currentTechResearchIsCompleted() {
         return scienceProgress >= getScienceToCompleteTechnology();
     }
     public void finishTechIfFinished() {
-        if(this.researchingTech != -1 && techIsCompleted()) {
-            techs.add(this.researchingTech);
+        if(this.researchingTech != -1 && currentTechResearchIsCompleted()) {
+            techsHave[this.researchingTech] = true;
         }
     }
     public void increaseScienceProgress(int scienceProgress) {
         this.scienceProgress += scienceProgress;
         finishTechIfFinished();
     }
+    public static TechnologyData getTechnology(int id) {
+        return techTree[id];
+    }
+    public boolean isResearched(int id) {
+        return techsHave[id];
+    }
     public boolean canResearchTech(int id) {
+        if(isResearched(id))
+            return false;
 
+        TechnologyData t = getTechnology(id);
+        for(int i = 0; i < t.idTechnologyPrereqs.length; i++) {
+            if(!isResearched(t.idTechnologyPrereqs[i]))
+                return false;
+        }
+        return true;
+    }
+    public ArrayList<TechnologyData> getTechsCanResearch() {
+        // TODO: More efficient
+        ArrayList<TechnologyData> canResearch = new ArrayList<TechnologyData>();
+        for(int i = 0; i < techTree.length; i++) {
+            if(!isResearched(i)) {
+                if(canResearchTech(i)) {
+                    canResearch.add(getTechnology(i));
+                }
+            }
+        }
+        return canResearch;
     }
     public void setTechResearch(int id) {
         if(canResearchTech(id))
         this.researchingTech = id;
     }
     public TechnologyData getTech() {
-        return techTree[this.researchingTech]
+        return techTree[this.researchingTech];
+    }
+    public String toString() {
+        StringBuilder str = new StringBuilder("");
+        for(int y = 0; y < 4; y++) {
+            for(int x = y; x < techTree.length; x+=4) {
+                String techStr = getTechnology(x).getName() + (isResearched(x) ? "✔" : "✘");
+                techStr = String.format("%-20s",techStr);
+                str.append(techStr);
+            }
+            str.append("\n");
+        }
+        return str.toString();
     }
 }

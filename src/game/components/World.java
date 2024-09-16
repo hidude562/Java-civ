@@ -16,7 +16,7 @@ public class World extends GameElement {
     public World(Vert2D size) {
         tiles = new Tiles(size);
         tiles.newWorld();
-        nations = new Nations(tiles, 5);
+        nations = new Nations(tiles, 3);
 
         for (int i = 1; i < nations.getNations().size(); i++) {
             ais.add(new AI(nations.getNation(i), this));

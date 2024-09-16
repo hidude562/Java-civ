@@ -8,11 +8,14 @@ class Nation extends GameElement {
     private int nation;
     private Cities cities;
     private Units units;
+    private TechTree techTree;
 
     public Nation(int nation) {
         this.nation = nation;
         this.cities = new Cities();
         this.units = new Units();
+        this.techTree = new TechTree();
+        System.out.println(techTree);
     }
 
     public Cities getCities() {
