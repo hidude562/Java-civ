@@ -45,10 +45,7 @@ class Nations extends GameElement {
         for (Nation nation : nations) {
             nation.nextTurn();
 
-            for (int i = 0; i < nation.getCities().size(); i++) {
-                City c = nation.getCities().getCity(i);
-                c.nextTurn();
-            }
+
         }
     }
 }

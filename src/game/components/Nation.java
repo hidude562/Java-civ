@@ -15,7 +15,6 @@ class Nation extends GameElement {
         this.cities = new Cities();
         this.units = new Units();
         this.techTree = new TechTree();
-        System.out.println(techTree);
     }
 
     public Cities getCities() {
@@ -34,7 +33,15 @@ class Nation extends GameElement {
         return units;
     }
 
+    public void techTreeManage() {
+            ArrayList<TechTree.Technology> potentialTechs = techTree.getTechsCanResearch();
+            techTree.setTechResearch(potentialTechs.get(0));
+    }
+
     public void nextTurn() {
+        Yields citiesYields = cities.getTotalYields();
+        techTree.increaseScienceProgress(citiesYields.getScience());
+
         cities.nextTurn();
         units.nextTurn();
     }
@@ -93,16 +100,23 @@ class Nation extends GameElement {
             return cities.get(index);
         }
 
-        ;
-
         public ArrayList<City> getCities() {
             return cities;
         }
 
-        ;
+        public Yields getTotalYields() {
+            Yields yields = new Yields();
+            for(City c : cities) {
+                yields.add(c.getYields());
+            }
+            return yields;
+        }
 
         public void nextTurn() {
-
+            for (int i = 0; i < cities.size(); i++) {
+                City c = cities.get(i);
+                c.nextTurn();
+            }
         }
 
         public void removeCity(City c) {

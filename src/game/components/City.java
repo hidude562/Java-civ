@@ -187,7 +187,7 @@ class City extends GameElement {
         return true;
     }
 
-    private Yields getYields() {
+    public Yields getYields() {
         // Get Tile yields
         Yields tileYields = new Yields(name, 0, 0, 0, 0);
         for (Tiles.Tile tile : workedTiles) {

@@ -13,6 +13,12 @@ class Yields {
         this.science = science;
         this.gold = gold;
     }
+    public Yields() {
+        this.food = 0;
+        this.production = 0;
+        this.science = 0;
+        this.gold = 0;
+    }
 
     public String getName() {
         return name;
