@@ -21,31 +21,21 @@ class Nations extends GameElement {
         }
     }
 
-    ;
-
     public Nations(ArrayList<Nation> nations) {
         this.nations = nations;
     }
-
-    ;
 
     public Nation getNation(int index) {
         return nations.get(index);
     }
 
-    ;
-
     public ArrayList<Nation> getNations() {
         return nations;
     }
 
-    ;
-
     public void nextTurn() {
         for (Nation nation : nations) {
             nation.nextTurn();
-
-
         }
     }
 }

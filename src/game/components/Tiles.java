@@ -65,8 +65,6 @@ class Tiles {
             this.referenceIndex = referenceIndex;
         }
 
-        ;
-
         private TileData tileData() {
             return tiles[referenceIndex];
         }

@@ -25,14 +25,14 @@ class AI {
     private void manageCity(City city) {
         city.autoAssignWorkers();
         if (!city.isBuildingSomething()) {
-            city.setProduction(new Unit(nation, (int) (Math.random() * 2)));
+            city.setProduction(nation.getTechTree().getUnlocks().getUnitsRefs().get(0));
         }
     }
 
     private void manageUnit(Unit unit) {
-        if (unit.getType() == 0) { // Settler
+        if (unit.getType().getReference() == 0) { // Settler
             handleSettler(unit);
-        } else if (unit.getType() == 1) { // Warrior
+        } else if (unit.getType().getReference() == 1) { // Warrior
             handleWarrior(unit);
         }
     }
@@ -62,13 +62,18 @@ class AI {
 
     private void handleWarrior(Unit warrior) {
         if (warrior.pathIsEmpty()) {
-            // Find the nearest enemy unit or city
-            Tiles.Tile target = findNearestEnemyOrCity(warrior);
-            if (target != null) {
-                warrior.setPath(target);
+            boolean defense = true;
+            if(defense) {
+
             } else {
-                if (warrior.pathIsEmpty()) {
-                    warrior.setPath(world.getTiles().getRandomTile());
+                // Find the nearest enemy unit or city
+                Tiles.Tile target = findNearestEnemyOrCity(warrior);
+                if (target != null) {
+                    warrior.setPath(target);
+                } else {
+                    if (warrior.pathIsEmpty()) {
+                        warrior.setPath(world.getTiles().getRandomTile());
+                    }
                 }
             }
         }
@@ -94,7 +99,7 @@ class AI {
     }
 
     private Tiles.Tile findNearestEnemyOrCity(Unit unit) {
-        /*
+
         // This is a very basic implementation. You might want to implement a proper search algorithm.
         Tiles.Tile currentTile = unit.getTile();
         Tiles.Tile[] neighbors = currentTile.getNeighborTiles();
@@ -107,7 +112,7 @@ class AI {
                 }
             }
         }
-        */
+
         return null;
     }
 }

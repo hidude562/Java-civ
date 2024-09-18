@@ -34,16 +34,25 @@ class Nation extends GameElement {
     }
 
     public void techTreeManage() {
+        if(!techTree.isResearching()) {
             ArrayList<TechTree.Technology> potentialTechs = techTree.getTechsCanResearch();
-            techTree.setTechResearch(potentialTechs.get(0));
+            if(potentialTechs.size() > 0)
+                techTree.setTechResearch(potentialTechs.get((int) (Math.random() * potentialTechs.size())));
+        }
+        System.out.println(techTree);
     }
 
     public void nextTurn() {
         Yields citiesYields = cities.getTotalYields();
         techTree.increaseScienceProgress(citiesYields.getScience());
+        techTreeManage();
 
         cities.nextTurn();
         units.nextTurn();
+    }
+
+    public TechTree getTechTree() {
+        return techTree;
     }
 
     class Units extends GameElement {
@@ -105,9 +114,9 @@ class Nation extends GameElement {
         }
 
         public Yields getTotalYields() {
-            Yields yields = new Yields();
+            Yields yields = new Yields("",0,0,0,0);
             for(City c : cities) {
-                yields.add(c.getYields());
+                yields = yields.add(c.getYields());
             }
             return yields;
         }

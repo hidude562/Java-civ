@@ -5,18 +5,15 @@ import java.util.ArrayList;
 /* Nation.Unit list reference at units.txt */
 class Unit extends GameElement {
     private final Nation nation;
-    private int type;
+    private GameThings.UnitConfigReference type;
     private boolean isDead;
     private int movementLeft;
-    public static final UnitConfig[] idConfigs = {
-            new UnitConfig("Settler", 2, 0, 0, new int[]{0}, new PathfinderConfig(true, new int[]{0, 1})),
-            new UnitConfig("Warrior", 1, 1, 1, new int[]{}, new PathfinderConfig(true, new int[]{0, 1})),
-    };
+    public static final UnitConfig[] idConfigs = GameThings.units;
 
     private Tiles.Tile tile;
     private ArrayList<Tiles.Tile> path = new ArrayList<>();
 
-    public Unit(Nation nation, int type, Tiles.Tile tile) {
+    public Unit(Nation nation, GameThings.UnitConfigReference type, Tiles.Tile tile) {
         this.nation = nation;
         this.type = type;
         this.tile = tile;
@@ -24,7 +21,7 @@ class Unit extends GameElement {
         this.tile.addUnit(this);
     }
 
-    public Unit(Nation nation, int type) {
+    public Unit(Nation nation, GameThings.UnitConfigReference type) {
         this.nation = nation;
         this.type = type;
         this.tile = null;
@@ -33,9 +30,13 @@ class Unit extends GameElement {
 
     public Unit(Nation nation, Unit u) {
         this.nation = nation;
-        this.type = u.getType();
         this.tile = u.getTile();
+        this.type = u.getType();
         this.movementLeft = u.getConfig().getStartingMovement();
+    }
+
+    private GameThings.UnitConfigReference getUnitConfigReference() {
+        return this.type;
     }
 
     public Unit(Nation nation, Unit u, Tiles.Tile tile) {
@@ -45,7 +46,7 @@ class Unit extends GameElement {
         this.movementLeft = u.getConfig().getStartingMovement();
     }
 
-    public int getType() {
+    public GameThings.UnitConfigReference getType() {
         return type;
     }
 
@@ -62,10 +63,10 @@ class Unit extends GameElement {
     }
 
     public PathfinderConfig getPathfinderConfig() {
-        return idConfigs[type].getPathfinderConfig();
+        return getConfig().getPathfinderConfig();
     }
 
-    public void setType(int type) {
+    public void setType(GameThings.UnitConfigReference type) {
         this.type = type;
     }
 
@@ -79,7 +80,7 @@ class Unit extends GameElement {
     }
 
     public UnitConfig getConfig() {
-        return idConfigs[type];
+        return (UnitConfig) type.get();
     }
 
     public void unitAction(int idSpecial) {

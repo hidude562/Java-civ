@@ -40,18 +40,19 @@ class City extends GameElement {
 
 
     class Building {
-        public static BuildingConfig idConfigs[] = {
-                new BuildingConfig(new int[]{0}, "Library"),
-                new BuildingConfig(new int[]{1}, "Market")
-        };
-        private int type;
+        public static BuildingConfig idConfigs[] = GameThings.buildings;
+        private GameThings.BuildingConfigReference type;
 
-        public Building(int type) {
+        public Building(GameThings.BuildingConfigReference type) {
             this.type = type;
         }
 
+        public BuildingConfig getConfig() {
+            return (BuildingConfig) type.get();
+        }
+
         public String toString() {
-            return idConfigs[type].getName();
+            return getConfig().getName();
         }
     }
 
@@ -59,11 +60,11 @@ class City extends GameElement {
     class Builder {
         // For building Unit and buildings
         private int productionComplete;
-        private Object buildable;
+        private GameThings.Reference buildable;
         // TODO: Remove when custom production for things are implementde
         private int productionNeeded = 20;
 
-        public Builder(Object buildable) {
+        public Builder(GameThings.Reference buildable) {
             this.buildable = buildable;
             this.productionComplete = 0;
         }
@@ -86,7 +87,7 @@ class City extends GameElement {
             return productionComplete >= productionNeeded; /* TODO: Just a test */
         }
 
-        public void setBuildable(Object buildable) {
+        public void setBuildable(GameThings.Reference buildable) {
             this.buildable = buildable;
         }
 
@@ -97,13 +98,16 @@ class City extends GameElement {
         private void completeProduction() {
             // Add the Building to the city, or the unit to the city's tile
 
-            if (buildable instanceof Unit) {
+            System.out.println(buildable.getClass());
+
+            if (buildable instanceof GameThings.UnitConfigReference) {
                 // Assuming there is a method to add Unit to a Tile in the City or Map class
-                Unit u = new Unit(nation, (Unit) buildable, cityCenterTile);
+                Unit u = new Unit(nation, (GameThings.UnitConfigReference) buildable, cityCenterTile);
                 nation.getUnits().addUnit(u);
-            } else if (buildable instanceof Building) {
+            } else if (buildable instanceof GameThings.BuildingConfigReference) {
                 // Assuming there is an addBuilding method in the City class
-                addBuilding((Building) buildable);
+                Building b = new Building((GameThings.BuildingConfigReference) buildable);
+                addBuilding(b);
             }
 
             productionComplete -= productionNeeded;
@@ -227,7 +231,7 @@ class City extends GameElement {
         this.buildings.add(building);
     }
 
-    public void setProduction(Object buildable) {
+    public void setProduction(GameThings.Reference buildable) {
         builder.setBuildable(buildable);
     }
 
