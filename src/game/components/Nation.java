@@ -114,7 +114,7 @@ class Nation extends GameElement {
         }
 
         public Yields getTotalYields() {
-            Yields yields = new Yields("",0,0,0,0);
+            Yields yields = new Yields("",0,0,0,0,0);
             for(City c : cities) {
                 yields = yields.add(c.getYields());
             }

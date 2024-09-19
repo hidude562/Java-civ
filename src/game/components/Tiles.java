@@ -228,6 +228,20 @@ class Tiles {
 
             return tiles;
         }
+        public Tile[] getTilesInRange(int range) {
+            // Get corners, and main directions
+            int distToCover = (1+range*2);
+            Tile[] tiles = new Tile[distToCover*distToCover];
+            for (int i = 0; i < distToCover*distToCover; i++) {
+                Vert2D direction = new Vert2D(i % distToCover - range, i / distToCover - range);
+                if (!direction.equals(new Vert2D())) {
+                    Tile tile = getTileFromRelativeXY(direction);
+                    tiles[i] = tile;
+                }
+            }
+
+            return tiles;
+        }
 
         public boolean canBuildCityHere() {
             if (tileData().getType() < 2)
@@ -243,6 +257,8 @@ class Tiles {
 
             return true;
         }
+
+        public Tiles getMap() {return Tiles.this;}
 
         public String toString() {
             String repr = "";

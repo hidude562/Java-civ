@@ -14,7 +14,7 @@ class Nations extends GameElement {
                 tile = tiles.getRandomTile();
             }
 
-            Unit initalSettler = new Unit(nation, 0, tile);
+            Unit initalSettler = new Unit(nation, new GameThings.UnitConfigReference(0), tile);
 
             nation.addUnit(initalSettler);
             nations.add(nation);

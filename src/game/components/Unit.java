@@ -110,7 +110,7 @@ class Unit extends GameElement {
     private void moveUntilCannot() {
         if (isDead) return;
 
-        while (this.movementLeft > 0 && this.path.size() > 0) {
+        while (this.movementLeft > 0 && !pathIsEmpty()) {
             this.moveToTile(this.path.remove(0));
         }
     }
@@ -119,6 +119,13 @@ class Unit extends GameElement {
         return this.path.size() == 0;
     }
 
+    public int randomAttackAdder() {
+        int add = 0;
+        for(int i = 0; i < 5; i++) {
+            add+=((int) Math.random() * 2);
+        }
+        return add;
+    }
     public boolean attack(Tiles.Tile tile) {
         if (isDead) return false;
 
@@ -139,14 +146,13 @@ class Unit extends GameElement {
             otherUnit.setDead();
             return true;
         }
-        if (otherUnit.getConfig().getDefense() + ((int) Math.random() * 2) < this.getConfig().getAttack() + ((int) Math.random() * 2)) {
+        if (otherUnit.getConfig().getDefense() + randomAttackAdder() < this.getConfig().getAttack() + randomAttackAdder()) {
             setDead();
             return true;
         }
         setDead();
         return false;
     }
-
     // Moves from one point, to the next if it is valid
     public boolean moveToTile(Tiles.Tile tile) {
         if (isDead) return false;

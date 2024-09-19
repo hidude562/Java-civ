@@ -45,6 +45,13 @@ class City extends GameElement {
 
         public Building(GameThings.BuildingConfigReference type) {
             this.type = type;
+
+            for(int id : ((BuildingConfig) type.get()).getImplementationIds()) {
+                switch(id) {
+                    case 8:
+                        City.this.range += 1;
+                }
+            }
         }
 
         public BuildingConfig getConfig() {
@@ -84,6 +91,7 @@ class City extends GameElement {
         }
 
         public boolean productionIsComplete() {
+            if(buildable == null) return false;
             return productionComplete >= productionNeeded; /* TODO: Just a test */
         }
 
@@ -97,8 +105,6 @@ class City extends GameElement {
 
         private void completeProduction() {
             // Add the Building to the city, or the unit to the city's tile
-
-            System.out.println(buildable.getClass());
 
             if (buildable instanceof GameThings.UnitConfigReference) {
                 // Assuming there is a method to add Unit to a Tile in the City or Map class
@@ -130,6 +136,40 @@ class City extends GameElement {
         autoAssignWorkers();
     }
 
+    public boolean hasBuilding(GameThings.BuildingConfigReference type) {
+        for(Building b : buildings) {
+            if(b.getConfig() == type.get()) {
+                return true;
+            }
+        }
+        return false;
+    }
+    public boolean buildingMeetsPrereqs(GameThings.BuildingConfigReference type) {
+        GameThings.BuildingConfigReference prereq = ((BuildingConfig) type.get()).getPrereq();
+        if(prereq == null) return true;
+        if(hasBuilding(
+                prereq
+        )) {
+            return true;
+        }
+        return false;
+    }
+    public boolean canMakeBuilding(GameThings.BuildingConfigReference b) {
+        return !hasBuilding(b) && buildingMeetsPrereqs(b);
+    }
+    public ArrayList<GameThings.BuildingConfigReference> getBuildingsCanMake() {
+        ArrayList<GameThings.BuildingConfigReference> buildingsUnlocked =
+                nation.getTechTree().getUnlocks().getBuildingRefs();
+        ArrayList<GameThings.BuildingConfigReference> buildingsCanMake =
+                new ArrayList<GameThings.BuildingConfigReference>();
+        for(GameThings.BuildingConfigReference b : buildingsUnlocked) {
+            if(canMakeBuilding(b)) {
+                buildingsCanMake.add(b);
+            }
+        }
+        return buildingsCanMake;
+    }
+
     public boolean assignWorkTile(Tiles.Tile tile) {
         if (workedTiles.size() >= population) return false;
 
@@ -139,6 +179,7 @@ class City extends GameElement {
 
         if (tile.getWorked()) return false;
         if (tile.getOwnedCity() != this && tile.getOwnedCity() != null) return false;
+        if (tile.getNationality() != null && tile.getNationality() != nation) return false;
         if (tile.hasCityCenter()) return false;
 
         tile.setOwnedCity(this);
@@ -149,9 +190,7 @@ class City extends GameElement {
     }
 
     public void autoAssignWorkers() {
-        // TODO: Courthouse support
-
-        Tiles.Tile[] neighbors = cityCenterTile.getNeighborTiles();
+        Tiles.Tile[] neighbors = cityCenterTile.getTilesInRange(range);
 
         // Assume that yields are additive (sum of all yields)
         Arrays.sort(neighbors, new Comparator<Tiles.Tile>() {
@@ -193,14 +232,36 @@ class City extends GameElement {
 
     public Yields getYields() {
         // Get Tile yields
-        Yields tileYields = new Yields(name, 0, 0, 0, 0);
+        Yields tileYields = new Yields(name, 0, 0, 0, 0, 0);
         for (Tiles.Tile tile : workedTiles) {
             tileYields = tileYields.add(tile.getYields());
         }
 
         // Get Citizen yields
-        Yields citizenYields = new Yields(name, 0, population - workedTiles.size(), population, population);
+        Yields citizenYields = new Yields(name, 0, population - workedTiles.size(), population, population, 0);
         Yields yields = tileYields.add(citizenYields);
+
+        // Apply building modifiers
+        for(Building b : buildings) {
+            for(int id : b.getConfig().getImplementationIds()) {
+                switch(id) {
+                    case 0:
+                        yields.setScience(yields.getScience() * 2);
+                    case 1:
+                        yields.setScience(yields.getScience() * 2);
+                    case 2:
+                        yields.setGold(yields.getGold() * 2);
+                    case 3:
+                        yields.setGold(yields.getGold() * 2);
+                    case 4:
+                        yields.setFood(yields.getFood() * 3 / 2);
+                    case 5:
+                        yields.setCulture(yields.getCulture() + population);
+                    case 6:
+                        yields.setCulture(yields.getCulture() + population);
+                }
+            }
+        }
         return yields;
     }
 
@@ -233,6 +294,7 @@ class City extends GameElement {
 
     public void setProduction(GameThings.Reference buildable) {
         builder.setBuildable(buildable);
+        System.out.println("Setting production to " + buildable.toString());
     }
 
     public boolean isBuildingSomething() {

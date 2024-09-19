@@ -8,6 +8,7 @@ class SpecialMoveConfig {
     public SpecialMoveConfig(String name, boolean killOnUse, int implementationId) {
         this.name = name;
         this.killOnUse = killOnUse;
+        this.implementationId = implementationId;
     }
 
     public String getName() {

@@ -27,7 +27,7 @@ public class main {
 
         City userCity = playerNation.getCities().getCity(0);
         System.out.println(userCity.toString());
-        userCity.setProduction(new Unit(playerNation, 0));
+        userCity.setProduction(new GameThings.UnitConfigReference(0));
 
         for(int t = 0; t < 150; t++) {
             world.nextTurn();

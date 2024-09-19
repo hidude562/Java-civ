@@ -1,5 +1,7 @@
 package game.components;
 
+import java.util.ArrayList;
+
 class AI {
     private Nation nation;
     private World world;
@@ -25,16 +27,51 @@ class AI {
     private void manageCity(City city) {
         city.autoAssignWorkers();
         if (!city.isBuildingSomething()) {
-            city.setProduction(nation.getTechTree().getUnlocks().getUnitsRefs().get(0));
+            boolean buildBuilding = true;
+            if(buildBuilding) {
+                ArrayList<GameThings.BuildingConfigReference> buildingsCanMake = city.getBuildingsCanMake();
+                if(buildingsCanMake.size()>0)
+                    city.setProduction(buildingsCanMake.get(
+                            (int) (Math.random() * buildingsCanMake.size())
+                    ));
+            } else {
+                ArrayList<GameThings.UnitConfigReference> unitsUnlocked = nation.getTechTree().getUnlocks().getUnitsRefs();
+                city.setProduction(unitsUnlocked.get(
+                        (int) (Math.random() * unitsUnlocked.size())
+                ));
+            }
         }
     }
 
     private void manageUnit(Unit unit) {
         if (unit.getType().getReference() == 0) { // Settler
             handleSettler(unit);
-        } else if (unit.getType().getReference() == 1) { // Warrior
-            handleWarrior(unit);
+        } else if (unit.getType().getReference() % 3 == 1) { // Defense main unit
+            handleDefensiveUnit(unit);
+        } else if (unit.getType().getReference() % 3 == 2) { // Attack main unit
+            handleOffensiveUnit(unit);
+        } else if (unit.getType().getReference() % 3 == 0) { // Attack main unit
+            handleExpensiveUnit(unit);
         }
+    }
+
+    private void handleDefensiveUnit(Unit unit) {
+
+    }
+
+    private void handleOffensiveUnit(Unit unit) {
+        Tiles.Tile target = findNearestEnemyOrCity(unit);
+        if (target != null) {
+            unit.setPath(target);
+        } else {
+            if (unit.pathIsEmpty()) {
+                unit.setPath(world.getTiles().getRandomTile());
+            }
+        }
+    }
+
+    private void handleExpensiveUnit(Unit unit) {
+
     }
 
     private void handleSettler(Unit settler) {
@@ -54,25 +91,6 @@ class AI {
                         )) {
                             break;
                         }
-                    }
-                }
-            }
-        }
-    }
-
-    private void handleWarrior(Unit warrior) {
-        if (warrior.pathIsEmpty()) {
-            boolean defense = true;
-            if(defense) {
-
-            } else {
-                // Find the nearest enemy unit or city
-                Tiles.Tile target = findNearestEnemyOrCity(warrior);
-                if (target != null) {
-                    warrior.setPath(target);
-                } else {
-                    if (warrior.pathIsEmpty()) {
-                        warrior.setPath(world.getTiles().getRandomTile());
                     }
                 }
             }
@@ -107,12 +125,12 @@ class AI {
         for (Tiles.Tile tile : neighbors) {
             if(tile != null) {
                 if ((tile.hasUnit() && tile.getUnit(0).getNation() != nation) ||
-                        (tile.hasCityCenter() && tile.getCityCenter().getNation() != nation)) {
+                        (tile.hasCityCenter() && tile.getCityCenter().getNationality() != nation)) {
                     return tile;
                 }
             }
         }
 
-        return null;
+        return currentTile.getMap().getRandomTile();
     }
 }
