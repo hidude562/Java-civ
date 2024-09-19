@@ -242,7 +242,15 @@ class Tiles {
 
             return tiles;
         }
-
+        public boolean isBorderEdge() {
+            Tile[] tiles = getNeighborTiles();
+            for(Tile t : tiles) {
+                if(t.getNationality() != this.getNationality()) {
+                    return true;
+                }
+            }
+            return false;
+        }
         public boolean canBuildCityHere() {
             if (tileData().getType() < 2)
                 return false;
