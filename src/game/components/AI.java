@@ -30,7 +30,8 @@ class AI {
         List<Unit> units = nation.getUnits().getUnits();
         units.sort(Comparator.comparingInt(u -> u.getType().getReference()));
 
-        for (Unit unit : units) {
+        for (int i = 0; i < units.size(); i++) {
+            Unit unit = units.get(i);
             manageUnit(unit);
         }
     }
@@ -49,7 +50,7 @@ class AI {
     private boolean shouldBuildUnit(City city) {
         int cityCount = nation.getCities().getCities().size();
         int unitCount = nation.getUnits().size();
-        return unitCount < cityCount * 3 || Math.random() < 0.3;
+        return Math.random() < 0.5;
     }
 
     private void buildUnit(City city) {
@@ -62,7 +63,8 @@ class AI {
 
     private GameThings.UnitConfigReference selectBestUnit(List<GameThings.UnitConfigReference> units) {
         // Implement logic to choose the best unit based on current needs
-        return units.get((int) (Math.random() * units.size()));
+        if((int) (Math.random() * 2) == 0) return units.get(0);
+        return units.get((int) (units.size() - Math.random() * 4));
     }
 
     private void buildBuilding(City city) {
@@ -79,9 +81,13 @@ class AI {
     }
 
     private void manageUnit(Unit unit) {
+        if(unit.getType().getReference() == 0) {
+            handleSettler(unit);
+            return;
+        }
         switch (unit.getType().getReference() % 3) {
             case 0:
-                handleSettler(unit);
+                handleOffensiveUnit(unit);
                 break;
             case 1:
                 handleDefensiveUnit(unit);
@@ -94,11 +100,12 @@ class AI {
 
     private void handleSettler(Unit settler) {
         if (settler.pathIsEmpty()) {
+            if (settler.getTile().canBuildCityHere()) {
+                settler.unitAction(0);
+            }
             Tiles.Tile bestLocation = findBestSettleLocation(settler);
             if (bestLocation != null) {
-                settler.setPath(bestLocation);
-            } else if (settler.getTile().canBuildCityHere()) {
-                settler.unitAction(0);
+                System.out.println(settler.setPath(bestLocation));
             }
         }
     }
@@ -128,10 +135,12 @@ class AI {
     private Tiles.Tile findBestSettleLocation(Unit settler) {
         // Implement a more sophisticated algorithm to find the best settle location
         // Consider factors like resources, distance from other cities, terrain, etc.
-        Tiles.Tile[] tiles = settler.getTile().getTilesInRange(4);
-        for(Tiles.Tile tile : tiles) {
-            if(tile.canBuildCityHere()) {
-                return 
+        for(int i = 3; i < 6; i++) {
+            Tiles.Tile[] tiles = settler.getTile().getTilesExactlyInRange(i);
+            for (Tiles.Tile tile : tiles) {
+                if (tile != null && tile.canBuildCityHere() && settler.canTravel(tile)) {
+                    return tile;
+                }
             }
         }
         return null;
@@ -139,14 +148,16 @@ class AI {
 
     private City findMostThreatenedCity() {
         // Implement logic to determine which city is under the most threat
-        return null;
+        // TODO: Logic by getting the most menacing tiles
+        ArrayList<City> cities = nation.getCities().getCities();
+        return cities.get((int) (Math.random() * cities.size()));
     }
 
     private void patrolBorders(Unit unit) {
         // Implement logic for defensive units to patrol the nation's borders
         Tiles.Tile[] tiles = unit.getTile().getTilesInRange(4);
         for(Tiles.Tile tile : tiles) {
-            if(tile.getNationality() == this.nation && tile.isBorderEdge() && tile != unit.getTile() && unit.setPath(tile)) {
+            if(tile!=null && tile.getNationality() == this.nation && tile.isBorderEdge() && tile != unit.getTile() && unit.setPath(tile)) {
                 break;
             }
         }
@@ -155,11 +166,31 @@ class AI {
     private Tiles.Tile findBestAttackTarget(Unit unit) {
         // Implement a more sophisticated algorithm to find the best attack target
         // Consider factors like enemy strength, strategic value, etc.
+        if(unit.getNation() == unit.getTile().getOwnedNation()) {
+            for(int i = 3; i < 12; i+=2) {
+                Tiles.Tile[] tiles = unit.getTile().getTilesInRange(4);
+                for (Tiles.Tile tile : tiles) {
+                    if (tile != null && tile.getOwnedNation() != this.nation && tile != unit.getTile() && unit.setPath(tile)) {
+                        break;
+                    }
+                }
+            }
+        }  else {
+            for(int i = 1; i < 3; i+=1) {
+                Tiles.Tile[] tiles = unit.getTile().getTilesExactlyInRange(i);
+                for (Tiles.Tile tile : tiles) {
+                    if (tile != null && tile.getOwnedNation() != this.nation && (tile.hasCityCenter()) && unit.setPath(tile)) {
+                        break;
+                    }
+                }
+            }
+        }
         return null;
     }
 
     private void exploreTerritory(Unit unit) {
         // Implement logic for units to explore unexplored territory
+        unit.setPath(world.getTiles().getRandomTile());
     }
 
     private void manageDiplomacy() {

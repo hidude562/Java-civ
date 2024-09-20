@@ -6,12 +6,15 @@ class TileData extends TileType {
     private int type;
     public static final Yields[] tileYields = new Yields[]{
             new Yields("Ocean", 1, 0, 0, 0, 0),
-            new Yields("Coast", 1, 0, 1, 0, 0),
+            new Yields("Coast", 1, 0, 0, 0, 0),
             new Yields("Ice", 0, 0, 0, 0, 0),
             new Yields("Tundra", 1, 0, 0, 0, 0),
             new Yields("Grassland", 2, 0, 0, 0, 0),
             new Yields("Plains", 1, 1, 0, 0, 0),
-            new Yields("Desert", 0, 0, 0, 1, 0)
+            new Yields("Desert", 0, 0, 0, 1, 0),
+            new Yields("Forest", 0, 2, 0, 0, 0),
+            new Yields("Hills", 0, 1, 0, 0, 0),
+            new Yields("Mountain", 0, 1, 0, 0, 0),
     };
     private AssortedUnitUnits units;
     private City cityCenter = null;

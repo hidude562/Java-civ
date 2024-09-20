@@ -1,6 +1,7 @@
 package game.components;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 // Stores the actual tiles data, and use for passing references
 class Tiles {
@@ -18,6 +19,13 @@ class Tiles {
 
     // Returns not tile data, but the reference to the tile and acts like it is real, so it has additional access to cool features
     public Tile getTile(int referenceIndex) {
+        if (referenceIndex < 0 || referenceIndex >= mapSize.getX() * mapSize.getY()) {
+            return null;
+        }
+        return new Tile(referenceIndex);
+    }
+    public Tile getTile(Vert2D xy) {
+        int referenceIndex = getIndexFromPoint(xy);
         if (referenceIndex < 0 || referenceIndex >= mapSize.getX() * mapSize.getY()) {
             return null;
         }
@@ -41,19 +49,74 @@ class Tiles {
     }
 
     public void newWorld() {
-        // TODO: Just a test
+        Random random = new Random();
+
+        // First pass: Generate basic terrain
         for (int y = 0; y < mapSize.getY(); y++) {
             for (int x = 0; x < mapSize.getX(); x++) {
-                setTileType(
-                        4,
-                        getIndexFromPoint(
-                                new Vert2D(
-                                        x, y
-                                )
-                        )
-                );
+                int tileType = random.nextInt(TileData.tileYields.length);
+                setTileType(tileType, getIndexFromPoint(new Vert2D(x, y)));
             }
         }
+
+        // Second pass: Smooth out the terrain
+        for (int y = 0; y < mapSize.getY(); y++) {
+            for (int x = 0; x < mapSize.getX(); x++) {
+                int currentType = getTile(getIndexFromPoint(new Vert2D(x, y))).getType();
+
+                // Check neighboring tiles
+                int[] neighborTypes = getNeighborTypes(x, y);
+                int mostCommonType = getMostCommonType(neighborTypes);
+
+                // 50% chance to change to the most common neighboring type
+                if (random.nextDouble() < 0.5) {
+                    setTileType(mostCommonType, getIndexFromPoint(new Vert2D(x, y)));
+                }
+            }
+        }
+
+        // Third pass: Add some randomness back
+        for (int y = 0; y < mapSize.getY(); y++) {
+            for (int x = 0; x < mapSize.getX(); x++) {
+                // 10% chance to change to a random type
+                if (random.nextDouble() < 0.1) {
+                    int newType = random.nextInt(TileData.tileYields.length);
+                    setTileType(newType, getIndexFromPoint(new Vert2D(x, y)));
+                }
+            }
+        }
+    }
+
+    private int[] getNeighborTypes(int x, int y) {
+        int[] types = new int[8];
+        int index = 0;
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue;
+                int nx = x + dx;
+                int ny = y + dy;
+                if (nx >= 0 && nx < mapSize.getX() && ny >= 0 && ny < mapSize.getY()) {
+                    types[index++] = getTile(getIndexFromPoint(new Vert2D(nx, ny))).getType();
+                }
+            }
+        }
+        return types;
+    }
+
+    private int getMostCommonType(int[] types) {
+        int[] typeCounts = new int[TileData.tileYields.length];
+        for (int type : types) {
+            if (type >= 0) typeCounts[type]++;
+        }
+        int maxCount = 0;
+        int mostCommonType = 0;
+        for (int i = 0; i < typeCounts.length; i++) {
+            if (typeCounts[i] > maxCount) {
+                maxCount = typeCounts[i];
+                mostCommonType = i;
+            }
+        }
+        return mostCommonType;
     }
 
     // Reference that acts like tile data
@@ -242,10 +305,27 @@ class Tiles {
 
             return tiles;
         }
+        public Tile[] getTilesExactlyInRange(int range) {
+            // Do fancy math to get a spiral for it basically
+            int distToCover = (range*2*4);
+            Tile[] tiles = new Tile[distToCover];
+            for (int i = 0; i < distToCover; i++) {
+                int dx = (i%2*2-1);
+                int dy =  ((i/2)%2*2-1);
+                Vert2D direction = new Vert2D(
+                        dx * range + (i/4 * -dx * ((i+1)%2)),
+                        dy * range + (i/4 * -dy * (i%2))
+                );
+                Tile tile = getTileFromRelativeXY(direction);
+                tiles[i] = tile;
+            }
+
+            return tiles;
+        }
         public boolean isBorderEdge() {
             Tile[] tiles = getNeighborTiles();
             for(Tile t : tiles) {
-                if(t.getNationality() != this.getNationality()) {
+                if(t != null && t.getNationality() != this.getNationality()) {
                     return true;
                 }
             }
@@ -287,6 +367,15 @@ class Tiles {
             }
             repr = String.format("%-3s",repr);
             return repr;
+        }
+
+        public Nation getOwnedNation() {
+            // TODO: fix
+            if(tileData() == null) return null;
+            if(tileData().getOwnedCity() == null) return null;
+            if(tileData().getOwnedCity().getNation() == null) return null;
+
+            return tileData().getOwnedCity().getNation();
         }
     }
 

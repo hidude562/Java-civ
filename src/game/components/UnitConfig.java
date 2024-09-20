@@ -1,7 +1,7 @@
 package game.components;
 
 // TODO: Unit kinda acts like a facade for unitconfig, so an abstract class can be used for better management
-class UnitConfig {
+class UnitConfig extends Buildable {
     // Type of Nation.Unit
     private final String name;
     private final int startingMovement;
@@ -15,7 +15,8 @@ class UnitConfig {
             new SpecialMoveConfig("Build city", true, 0)
     };
 
-    public UnitConfig(String name, int startingMovement, int attack, int defense, int[] idsSpecials, PathfinderConfig pathfinderConfig) {
+    public UnitConfig(String name, int startingMovement, int attack, int defense, int[] idsSpecials, PathfinderConfig pathfinderConfig, int production) {
+        super(production);
         this.name = name;
         this.startingMovement = startingMovement;
         this.attack = attack;

@@ -129,11 +129,13 @@ public class SwingMain extends JFrame {
 
         private Color getTileColor(int type) {
             switch (type) {
-                case 0: return Color.BLUE;  // Water
-                case 1: return Color.GRAY;  // Mountain
-                case 2: return Color.GREEN; // Grassland
-                case 3: return Color.YELLOW.darker(); // Desert
-                case 4: return Color.GREEN.darker(); // Forest
+                case 0: return Color.BLUE.darker();  // Water
+                case 1: return Color.BLUE;  // Water
+                case 2: return Color.WHITE;  // Ice
+                case 3: return Color.GREEN.brighter(); // Tundra
+                case 4: return Color.GREEN.darker(); // Grassland
+                case 5: return Color.YELLOW.darker(); // Plains
+                case 6: return Color.ORANGE.darker(); // Desert
                 default: return Color.WHITE;
             }
         }

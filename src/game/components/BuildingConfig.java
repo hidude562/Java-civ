@@ -1,17 +1,18 @@
 package game.components;
 
-class BuildingConfig {
+class BuildingConfig extends Buildable {
     private int[] implementationIds;
     private String name;
     private GameThings.BuildingConfigReference prereq;
 
-    public BuildingConfig(int[] implementationIds, String name, GameThings.BuildingConfigReference prereq) {
+    public BuildingConfig(int[] implementationIds, String name, GameThings.BuildingConfigReference prereq, int production) {
+        super(production);
         this.implementationIds = implementationIds;
         this.name = name;
         this.prereq = prereq;
     }
-    public BuildingConfig(int[] implementationIds, String name) {
-        this(implementationIds, name, null);
+    public BuildingConfig(int[] implementationIds, String name, int production) {
+        this(implementationIds, name, null, production);
     }
 
     public int[] getImplementationIds() {

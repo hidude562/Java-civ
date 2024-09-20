@@ -63,7 +63,6 @@ class City extends GameElement {
         }
     }
 
-    // TODO: This structure could be used for science too
     class Builder {
         // For building Unit and buildings
         private int productionComplete;
@@ -97,6 +96,14 @@ class City extends GameElement {
 
         public void setBuildable(GameThings.Reference buildable) {
             this.buildable = buildable;
+            if(buildable != null)
+                this.productionNeeded = ((Buildable) buildable.get()).getProduction();
+            /*
+            if(buildable.get() instanceof UnitConfig || buildable.get() instanceof BuildingConfig) {
+                this.productionNeeded = ((Buildable) buildable.get()).getProduction();
+            }
+
+             */
         }
 
         public Object getBuildable() {
@@ -243,22 +250,31 @@ class City extends GameElement {
 
         // Apply building modifiers
         for(Building b : buildings) {
+            System.out.println(b.getConfig().getName());
             for(int id : b.getConfig().getImplementationIds()) {
+                System.out.println(id);
                 switch(id) {
                     case 0:
                         yields.setScience(yields.getScience() * 2);
+                        break;
                     case 1:
                         yields.setScience(yields.getScience() * 2);
+                        break;
                     case 2:
                         yields.setGold(yields.getGold() * 2);
+                        break;
                     case 3:
                         yields.setGold(yields.getGold() * 2);
+                        break;
                     case 4:
                         yields.setFood(yields.getFood() * 3 / 2);
+                        break;
                     case 5:
                         yields.setCulture(yields.getCulture() + population);
+                        break;
                     case 6:
                         yields.setCulture(yields.getCulture() + population);
+                        break;
                 }
             }
         }
@@ -294,7 +310,6 @@ class City extends GameElement {
 
     public void setProduction(GameThings.Reference buildable) {
         builder.setBuildable(buildable);
-        System.out.println("Setting production to " + buildable.toString());
     }
 
     public boolean isBuildingSomething() {
@@ -337,6 +352,7 @@ class City extends GameElement {
     }
 
     public void nextTurn() {
+        System.out.println(this);
         collectYields();
         autoAssignWorkers();
         exchangeOwnershipIfTaken();

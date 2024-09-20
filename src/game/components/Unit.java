@@ -189,4 +189,9 @@ class Unit extends GameElement {
         moveUntilCannot();
         this.movementLeft = getConfig().getStartingMovement();
     }
+
+    public boolean canTravel(Tiles.Tile tile) {
+        if(distanceToTile(tile) != -1) {return true;}
+        return false;
+    }
 }
