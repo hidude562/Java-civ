@@ -7,7 +7,7 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SwingMain extends JFrame {
+class SwingMain extends JFrame {
     private World world;
     private GamePanel gamePanel;
     private JButton nextTurnButton;
@@ -16,7 +16,7 @@ public class SwingMain extends JFrame {
     private Map<Nation, Color> nationColors;
 
     public SwingMain() {
-        world = new World(new Vert2D(32, 32));
+        world = new World(new Vert2D(32, 20));
         turnCount = 0;
         initializeNationColors();
 
@@ -67,7 +67,7 @@ public class SwingMain extends JFrame {
     }
 
     class GamePanel extends JPanel {
-        private static final int TILE_SIZE = 20;
+        private static final int TILE_SIZE = 32;
 
         @Override
         protected void paintComponent(Graphics g) {

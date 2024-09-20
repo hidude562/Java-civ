@@ -88,8 +88,13 @@ class Unit extends GameElement {
         int implementationId = special.getImplementationId();
 
         if (implementationId == 0) {
-            // Build a city
-            nation.getCities().addCity(new City(nation, tile, "Skibidiopolis"));
+            if(tile.canBuildCityHere()) {
+                // Build a city
+                if (nation.getCities().size() == 0) {
+                    nation.addUnit(new Unit(nation, new GameThings.UnitConfigReference(1), tile));
+                }
+                nation.getCities().addCity(new City(nation, tile, "Skibidiopolis"));
+            }
         }
 
         if (special.getKillOnUse()) {

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 class GameThings {
     public static final UnitConfig[] units = new UnitConfig[] {
             new UnitConfig("Settler", 2, 0, 0, new int[]{0}, new PathfinderConfig(true, new int[]{0, 1}), 30),
-            new UnitConfig("Militia", 1, 0, 1, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 5),
+            new UnitConfig("Militia", 1, 0, 5, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 5000),
             new UnitConfig("Warrior", 1, 1, 1, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 10),
             new UnitConfig("Guy on a horse", 2, 1, 1, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 20),
 

@@ -115,7 +115,17 @@ class City extends GameElement {
 
             if (buildable instanceof GameThings.UnitConfigReference) {
                 // Assuming there is a method to add Unit to a Tile in the City or Map class
-                Unit u = new Unit(nation, (GameThings.UnitConfigReference) buildable, cityCenterTile);
+                GameThings.UnitConfigReference config = (GameThings.UnitConfigReference) buildable;
+                Unit u = new Unit(nation, config, cityCenterTile);
+                SpecialMoveConfig[] unitSpecials = ((UnitConfig) config.get()).getUnitSpecials();
+                for(SpecialMoveConfig special : unitSpecials) {
+                    // If settler
+                    if(special.getImplementationId() == 0) {
+                        City.this.population-=2;
+                        City.this.unWorkAllTiles();
+                        City.this.autoAssignWorkers();
+                    }
+                }
                 nation.getUnits().addUnit(u);
             } else if (buildable instanceof GameThings.BuildingConfigReference) {
                 // Assuming there is an addBuilding method in the City class
@@ -196,6 +206,12 @@ class City extends GameElement {
         return true;
     }
 
+    public void unWorkAllTiles() {
+        for(Tiles.Tile t : workedTiles) {
+            stopWorkTile(t);
+        }
+    }
+
     public void autoAssignWorkers() {
         Tiles.Tile[] neighbors = cityCenterTile.getTilesInRange(range);
 
@@ -250,9 +266,7 @@ class City extends GameElement {
 
         // Apply building modifiers
         for(Building b : buildings) {
-            System.out.println(b.getConfig().getName());
             for(int id : b.getConfig().getImplementationIds()) {
-                System.out.println(id);
                 switch(id) {
                     case 0:
                         yields.setScience(yields.getScience() * 2);
@@ -352,7 +366,6 @@ class City extends GameElement {
     }
 
     public void nextTurn() {
-        System.out.println(this);
         collectYields();
         autoAssignWorkers();
         exchangeOwnershipIfTaken();

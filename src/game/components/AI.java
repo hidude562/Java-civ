@@ -63,7 +63,7 @@ class AI {
 
     private GameThings.UnitConfigReference selectBestUnit(List<GameThings.UnitConfigReference> units) {
         // Implement logic to choose the best unit based on current needs
-        if((int) (Math.random() * 2) == 0) return units.get(0);
+        if((int) (Math.random() * 1) == 0) return units.get(0);
         return units.get((int) (units.size() - Math.random() * 4));
     }
 
@@ -112,9 +112,19 @@ class AI {
 
     private void handleDefensiveUnit(Unit unit) {
         if (unit.pathIsEmpty()) {
-            City cityToDefend = findMostThreatenedCity();
-            if (cityToDefend != null) {
-                unit.setPath(cityToDefend.getCityCenterTile());
+            ArrayList<City> citiesToDefend = findMostThreatenedCities();
+            int lowestDistance = 4;
+            City lowestCity = null;
+
+            for(City c : citiesToDefend) {
+                int dist = unit.distanceToTile(c.getCityCenterTile());
+                if(dist < lowestDistance) {
+                    lowestDistance = dist;
+                    lowestCity = c;
+                }
+            }
+            if(lowestCity != null) {
+                unit.setPath(lowestCity.getCityCenterTile());
             } else {
                 patrolBorders(unit);
             }
@@ -135,7 +145,8 @@ class AI {
     private Tiles.Tile findBestSettleLocation(Unit settler) {
         // Implement a more sophisticated algorithm to find the best settle location
         // Consider factors like resources, distance from other cities, terrain, etc.
-        for(int i = 3; i < 6; i++) {
+
+        for(int i = 3; i < 12; i+=3) {
             Tiles.Tile[] tiles = settler.getTile().getTilesExactlyInRange(i);
             for (Tiles.Tile tile : tiles) {
                 if (tile != null && tile.canBuildCityHere() && settler.canTravel(tile)) {
@@ -146,11 +157,11 @@ class AI {
         return null;
     }
 
-    private City findMostThreatenedCity() {
+    private ArrayList<City> findMostThreatenedCities() {
         // Implement logic to determine which city is under the most threat
         // TODO: Logic by getting the most menacing tiles
         ArrayList<City> cities = nation.getCities().getCities();
-        return cities.get((int) (Math.random() * cities.size()));
+        return cities;
     }
 
     private void patrolBorders(Unit unit) {
