@@ -24,6 +24,7 @@ class Tiles {
         }
         return new Tile(referenceIndex);
     }
+
     public Tile getTile(Vert2D xy) {
         int referenceIndex = getIndexFromPoint(xy);
         if (referenceIndex < 0 || referenceIndex >= mapSize.getX() * mapSize.getY()) {
@@ -376,6 +377,18 @@ class Tiles {
             if(tileData().getOwnedCity().getNation() == null) return null;
 
             return tileData().getOwnedCity().getNation();
+        }
+
+        public City getClosestEnemyCity() {
+            for(int i = 1; i < 10; i++) {
+                Tile[] tiles = getTilesExactlyInRange(i);
+                for(Tile t : tiles) {
+                    if(t.hasCityCenter() && t.getOwnedNation() != this.getOwnedNation()) {
+                        return t.getCityCenter();
+                    }
+                }
+            }
+            return null;
         }
     }
 

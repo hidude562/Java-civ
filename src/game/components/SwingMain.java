@@ -93,7 +93,7 @@ class SwingMain extends JFrame {
                 Color nationColor = nationColors.get(tile.getOwnedCity().getNation());
                 g2d.setColor(nationColor);
                 g2d.setStroke(new BasicStroke(3));
-                g2d.drawRect(x, y, TILE_SIZE, TILE_SIZE);
+                g2d.fillRect(x, y, TILE_SIZE, TILE_SIZE);
                 g2d.setStroke(new BasicStroke(1));
             }
 
@@ -108,6 +108,11 @@ class SwingMain extends JFrame {
                 g2d.fillOval(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                 g2d.setColor(Color.BLACK);
                 g2d.drawOval(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                String uRepr = "";
+                for(Unit u : tile.getUnits().units) {
+                    uRepr+=u.getConfig().getName().substring(0,1);
+                }
+                g2d.drawString(uRepr, x + TILE_SIZE / 2 - 2, y + TILE_SIZE / 2 + 4);
             }
 
             // Draw unit
@@ -118,6 +123,7 @@ class SwingMain extends JFrame {
                 g2d.fillOval(x + 5, y + 5, TILE_SIZE - 10, TILE_SIZE - 10);
                 g2d.setColor(Color.BLACK);
                 g2d.drawOval(x + 5, y + 5, TILE_SIZE - 10, TILE_SIZE - 10);
+                g2d.drawString(tile.getUnit(0).getConfig().getName().substring(0,1), x + TILE_SIZE / 2 - 2, y + TILE_SIZE / 2 + 4);
             }
 
             // Draw worked tile

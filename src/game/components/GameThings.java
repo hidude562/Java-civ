@@ -5,9 +5,13 @@ import java.util.ArrayList;
 class GameThings {
     public static final UnitConfig[] units = new UnitConfig[] {
             new UnitConfig("Settler", 2, 0, 0, new int[]{0}, new PathfinderConfig(true, new int[]{0, 1}), 30),
-            new UnitConfig("Militia", 1, 0, 5, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 5000),
+            new UnitConfig("Great Scientist", 3, 0, 0, new int[]{1, 2}, new PathfinderConfig(true, new int[]{0, 1}), 30),
+            new UnitConfig("Great Engineer", 3, 0, 0, new int[]{3, 4}, new PathfinderConfig(true, new int[]{0, 1}), 30),
+            new UnitConfig("Great Artist", 3, 0, 0, new int[]{5, 6}, new PathfinderConfig(true, new int[]{0, 1}), 30),
+
+            new UnitConfig("Militia", 1, 0, 2, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 20),
             new UnitConfig("Warrior", 1, 1, 1, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 10),
-            new UnitConfig("Guy on a horse", 2, 1, 1, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 20),
+            new UnitConfig("Horseman", 2, 1, 1, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 20),
 
             new UnitConfig("Archer", 1, 1, 2, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 15),
             new UnitConfig("Legion", 1, 2, 1, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 20),
@@ -40,6 +44,9 @@ class GameThings {
             new BuildingConfig(new int[]{7}, "Workshop", 30),
             new BuildingConfig(new int[]{8}, "Courthouse", 80),
             new BuildingConfig(new int[]{9}, "Sewers", 60),
+            new BuildingConfig(new int[]{10}, "Famous Scientist passive", -1),
+            new BuildingConfig(new int[]{11}, "Famous Engineer passive", -1),
+            new BuildingConfig(new int[]{12}, "Famous Artist passive", -1),
     };
     public static final Government[] governments = new Government[]{
             new Government("Despotism"),
@@ -90,8 +97,8 @@ class GameThings {
 
         // Unlock default things
         this.unitsRefs.add(new UnitConfigReference(0));
-        this.unitsRefs.add(new UnitConfigReference(1));
-        this.unitsRefs.add(new UnitConfigReference(2));
+        this.unitsRefs.add(new UnitConfigReference(5));
+        this.unitsRefs.add(new UnitConfigReference(6));
     }
     public void unlockUnit(UnitConfigReference u) {this.unitsRefs.add(u);}
     public void unlockBuilding(BuildingConfigReference b) {this.buildingsRefs.add(b);}

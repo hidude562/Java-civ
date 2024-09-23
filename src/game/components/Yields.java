@@ -72,6 +72,6 @@ class Yields {
     }
 
     public String toString() {
-        return String.format("%s: Food: %d, Production: %d, Science: %d, Gold: %d", name, food, production, science, gold);
+        return String.format("%s: Food: %d, Production: %d, Science: %d, Gold: %d Culture: %d", name, food, production, science, gold, culture);
     }
 }

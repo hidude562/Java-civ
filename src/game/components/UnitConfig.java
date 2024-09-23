@@ -12,7 +12,13 @@ class UnitConfig extends Buildable {
 
     // IDs for the special
     public static final SpecialMoveConfig[] specials = {
-            new SpecialMoveConfig("Build city", true, 0)
+            new SpecialMoveConfig("Build city", true, 0),
+            new SpecialMoveConfig("+50% science to city", true, 1),
+            new SpecialMoveConfig("+50% production to city", true, 2),
+            new SpecialMoveConfig("+50% culture in city", true, 3),
+            new SpecialMoveConfig("Research current tech", true, 4),
+            new SpecialMoveConfig("Build current building", true, 5),
+            new SpecialMoveConfig("Convert nearest city", true, 6)
     };
 
     public UnitConfig(String name, int startingMovement, int attack, int defense, int[] idsSpecials, PathfinderConfig pathfinderConfig, int production) {

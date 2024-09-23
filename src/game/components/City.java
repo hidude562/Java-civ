@@ -38,6 +38,17 @@ class City extends GameElement {
         return workedTiles;
     }
 
+    public Builder getBuilder() {
+        return builder;
+    }
+
+    public void cultureFlipTo(Nation nation) {
+        // You own the city, and all of the units in the direct center too
+        for(Unit u : cityCenterTile.getUnits().units) {
+            u.transferOwnershipTo(nation);
+        }
+        exchangeOwnershipIfTaken();
+    }
 
     class Building {
         public static BuildingConfig idConfigs[] = GameThings.buildings;
@@ -110,7 +121,23 @@ class City extends GameElement {
             return this.buildable;
         }
 
-        private void completeProduction() {
+        public void instantBuild(GameThings.Reference buildable) {
+            if(this.buildable == null || buildable.get() != this.buildable.get()) {
+                GameThings.Reference formerBuildable = this.buildable;
+                setBuildable(buildable);
+                buildThing();
+                this.buildable = formerBuildable;
+            } else {
+                buildThing();
+                setBuildable(null);
+            }
+        }
+
+        public void instantBuild() {
+            buildThing();
+        }
+
+        private void buildThing() {
             // Add the Building to the city, or the unit to the city's tile
 
             if (buildable instanceof GameThings.UnitConfigReference) {
@@ -132,7 +159,10 @@ class City extends GameElement {
                 Building b = new Building((GameThings.BuildingConfigReference) buildable);
                 addBuilding(b);
             }
+        }
 
+        private void completeProduction() {
+            buildThing();
             productionComplete -= productionNeeded;
             setBuildable(null);
         }
@@ -143,7 +173,7 @@ class City extends GameElement {
         this.cityCenterTile = cityCenterTile;
         cityCenterTile.setCityCenter(this);
         this.name = name;
-        this.population = 2;
+        this.population = 3;
         this.cityTiles = new ArrayList<>();
         workedTiles = new ArrayList<>();
         this.range = 1;
@@ -207,7 +237,8 @@ class City extends GameElement {
     }
 
     public void unWorkAllTiles() {
-        for(Tiles.Tile t : workedTiles) {
+        for(int i = 0; i < workedTiles.size(); i++) {
+            Tiles.Tile t = workedTiles.get(i);
             stopWorkTile(t);
         }
     }

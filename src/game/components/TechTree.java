@@ -39,12 +39,12 @@ class TechTree {
             new TechnologyData("Trade", new int[]{4, 6},     new GameThings.Reference[]{new GameThings.BuildingConfigReference(2)}),
             new TechnologyData("Engineering", new int[]{5},  new GameThings.Reference[]{new GameThings.BuildingConfigReference(4)}),
             new TechnologyData("Literacy", new int[]{6},     new GameThings.Reference[]{new GameThings.BuildingConfigReference(8)}),
-            new TechnologyData("Art", new int[]{0, 6}),
+            new TechnologyData("Art", new int[]{0, 6},       new GameThings.Reference[]{new GameThings.BuildingConfigReference(5)}),
 
             new TechnologyData("Banking", new int[]{8},                 new GameThings.Reference[]{new GameThings.BuildingConfigReference(3)}),
             new TechnologyData("Chivalry", new int[]{9, 7},             new GameThings.Reference[]{new GameThings.UnitConfigReference(8)}),
             new TechnologyData("Education", new int[]{10},              new GameThings.Reference[]{new GameThings.UnitConfigReference(7), new GameThings.BuildingConfigReference(1)}),
-            new TechnologyData("Divine right", new int[]{10, 11},       new GameThings.Reference[]{new GameThings.UnitConfigReference(6)}),
+            new TechnologyData("Divine right", new int[]{10, 11},       new GameThings.Reference[]{new GameThings.BuildingConfigReference(6), new GameThings.UnitConfigReference(6)}),
 
             new TechnologyData("Urbanization", new int[]{12},           new GameThings.Reference[]{new GameThings.UnitConfigReference(9)}),
             new TechnologyData("Invention", new int[]{12, 14}),
@@ -131,6 +131,9 @@ class TechTree {
     public boolean isResearching() {
         return this.researchingTech != null;
     }
+    public void instantResearch() {
+
+    }
     public int getScienceToCompleteTechnology() {
         if(researchingTech == null)
             return 0;
@@ -140,15 +143,18 @@ class TechTree {
     public boolean currentTechResearchIsCompleted() {
         return scienceProgress >= getScienceToCompleteTechnology();
     }
+    private void finishTech() {
+        // Add technology benefits
+        for(GameThings.Reference r : this.researchingTech.getGameElementsUnlocked()) {
+            this.unlocks.unlock(r);
+        }
+        this.scienceProgress -= getScienceToCompleteTechnology();
+        this.researchingTech.setResearched(true);
+        this.researchingTech = null;
+    }
     public void finishTechIfFinished() {
         if(this.researchingTech != null && currentTechResearchIsCompleted()) {
-            // Add technology benefits
-            for(GameThings.Reference r : this.researchingTech.getGameElementsUnlocked()) {
-                this.unlocks.unlock(r);
-            }
-            this.scienceProgress -= getScienceToCompleteTechnology();
-            this.researchingTech.setResearched(true);
-            this.researchingTech = null;
+            finishTech();
         }
     }
     public void increaseScienceProgress(int scienceProgress) {

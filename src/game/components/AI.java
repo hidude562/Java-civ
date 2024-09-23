@@ -63,8 +63,8 @@ class AI {
 
     private GameThings.UnitConfigReference selectBestUnit(List<GameThings.UnitConfigReference> units) {
         // Implement logic to choose the best unit based on current needs
-        if((int) (Math.random() * 1) == 0) return units.get(0);
-        return units.get((int) (units.size() - Math.random() * 4));
+        if((int) (Math.random() * 3) == 0) return units.get(0);
+        return units.get((int) (units.size() - Math.random() * 2)); //
     }
 
     private void buildBuilding(City city) {
@@ -81,11 +81,15 @@ class AI {
     }
 
     private void manageUnit(Unit unit) {
-        if(unit.getType().getReference() == 0) {
+        int unitType = unit.getType().getReference();
+        if(unitType == 0) {
             handleSettler(unit);
             return;
         }
-        switch (unit.getType().getReference() % 3) {
+        if(unitType >= 1 && unitType <= 3) {
+            handleFamousPerson(unit);
+        }
+        switch (unitType % 3) {
             case 0:
                 handleOffensiveUnit(unit);
                 break;
@@ -95,6 +99,16 @@ class AI {
             case 2:
                 handleOffensiveUnit(unit);
                 break;
+        }
+    }
+
+    private void handleFamousPerson(Unit guy) {
+        if (guy.pathIsEmpty()) {
+            if(guy.getTile().getCityCenter() == null) {
+                // TODO: Handle cases where unit for whatever reason isnt there
+            } else {
+                guy.unitAction((int) (Math.random() * 2));
+            }
         }
     }
 
@@ -113,6 +127,8 @@ class AI {
     private void handleDefensiveUnit(Unit unit) {
         if (unit.pathIsEmpty()) {
             ArrayList<City> citiesToDefend = findMostThreatenedCities();
+            if(citiesToDefend.isEmpty()) {return;}
+
             int lowestDistance = 4;
             City lowestCity = null;
 
@@ -160,7 +176,24 @@ class AI {
     private ArrayList<City> findMostThreatenedCities() {
         // Implement logic to determine which city is under the most threat
         // TODO: Logic by getting the most menacing tiles
-        ArrayList<City> cities = nation.getCities().getCities();
+        ArrayList<City> cities = new ArrayList<City>();
+        for(City c : nation.getCities().getCities()) {
+            Tiles.Tile cityCenter = c.getCityCenterTile();
+            int numUnits = cityCenter.getUnits().size();
+            if(numUnits == 0) {
+                cities.add(c);
+            } else if(numUnits < 3) {
+                Tiles.Tile[] nearbyTiles = cityCenter.getTilesExactlyInRange(2);
+                for(Tiles.Tile t : nearbyTiles) {
+                    if(t != null) {
+                        Nation nationality = t.getOwnedNation();
+                        if(nationality != null && nationality != this.nation) {
+                            cities.add(c);
+                        }
+                    }
+                }
+            }
+        }
         return cities;
     }
 
@@ -177,12 +210,12 @@ class AI {
     private Tiles.Tile findBestAttackTarget(Unit unit) {
         // Implement a more sophisticated algorithm to find the best attack target
         // Consider factors like enemy strength, strategic value, etc.
-        if(unit.getNation() == unit.getTile().getOwnedNation()) {
+        if(unit.getTile().getOwnedNation() == null || unit.getNation() == unit.getTile().getOwnedNation()) {
             for(int i = 3; i < 12; i+=2) {
-                Tiles.Tile[] tiles = unit.getTile().getTilesInRange(4);
+                Tiles.Tile[] tiles = unit.getTile().getTilesExactlyInRange(i);
                 for (Tiles.Tile tile : tiles) {
-                    if (tile != null && tile.getOwnedNation() != this.nation && tile != unit.getTile() && unit.setPath(tile)) {
-                        break;
+                    if (tile != null && tile.getOwnedNation() != null && tile.getOwnedNation() != this.nation && tile != unit.getTile() && unit.setPath(tile)) {
+                        return tile;
                     }
                 }
             }
@@ -191,11 +224,12 @@ class AI {
                 Tiles.Tile[] tiles = unit.getTile().getTilesExactlyInRange(i);
                 for (Tiles.Tile tile : tiles) {
                     if (tile != null && tile.getOwnedNation() != this.nation && (tile.hasCityCenter()) && unit.setPath(tile)) {
-                        break;
+                        return tile;
                     }
                 }
             }
         }
+        System.out.println("GAY");
         return null;
     }
 

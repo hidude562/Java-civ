@@ -9,12 +9,14 @@ class Nation extends GameElement {
     private Cities cities;
     private Units units;
     private TechTree techTree;
+    private Culture culture;
 
     public Nation(int nation) {
         this.nation = nation;
         this.cities = new Cities();
         this.units = new Units();
         this.techTree = new TechTree();
+        this.culture = new Culture(this);
     }
 
     public Cities getCities() {
@@ -45,6 +47,8 @@ class Nation extends GameElement {
     public void nextTurn() {
         Yields citiesYields = cities.getTotalYields();
         techTree.increaseScienceProgress(citiesYields.getScience());
+        culture.increaseCulture(citiesYields.getCulture());
+        System.out.println(citiesYields);
         techTreeManage();
 
         cities.nextTurn();

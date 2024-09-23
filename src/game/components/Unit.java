@@ -83,7 +83,7 @@ class Unit extends GameElement {
         return (UnitConfig) type.get();
     }
 
-    public void unitAction(int idSpecial) {
+    public String unitAction(int idSpecial) {
         SpecialMoveConfig special = getConfig().getSpecial(idSpecial);
         int implementationId = special.getImplementationId();
 
@@ -91,15 +91,64 @@ class Unit extends GameElement {
             if(tile.canBuildCityHere()) {
                 // Build a city
                 if (nation.getCities().size() == 0) {
-                    nation.addUnit(new Unit(nation, new GameThings.UnitConfigReference(1), tile));
+                    nation.addUnit(new Unit(nation, new GameThings.UnitConfigReference(4), tile));
                 }
                 nation.getCities().addCity(new City(nation, tile, "Skibidiopolis"));
+            } else {
+                return "City too close to other cities!";
             }
+        }
+
+        if (implementationId == 1 || implementationId == 2 || implementationId == 3) {
+            City c = tile.getCityCenter();
+            if(c != null) {
+                c.getBuilder().instantBuild(new GameThings.BuildingConfigReference(implementationId + 9));
+            } else {
+                return "You can only activate a Famous Person passive bonus in a city center!";
+            }
+        }
+
+        // Famous people passives
+        if (implementationId == 1 || implementationId == 2 || implementationId == 3) {
+            City c = tile.getCityCenter();
+            if(c != null) {
+                c.getBuilder().instantBuild(new GameThings.BuildingConfigReference(implementationId + 9));
+            } else {
+                return "You can only activate a Famous Person passive bonus in a city center!";
+            }
+        }
+
+        // Famous people instant bonuses
+        if (implementationId == 4 || implementationId == 5 || implementationId == 6) {
+            City city = tile.getCityCenter();
+            if(city != null) {
+                if(implementationId == 4) {
+                    if (nation.getTechTree().getCurrentlyResearchingTech() != null) {
+                        nation.getTechTree().instantResearch();
+                    } else {
+                        return "You should probably research a technology!";
+                    }
+                } else if (implementationId == 5) {
+                    if (city.isBuildingSomething()) {
+                        city.getBuilder().instantBuild();
+                    } else {
+                        return "You probably want to build something";
+                    }
+                } else if (implementationId == 6) {
+                    City closestEnemyCity = tile.getClosestEnemyCity();
+                    closestEnemyCity.cultureFlipTo(nation);
+                }
+            } else {
+                return "You can only activate a Famous Person passive bonus in a city center!";
+            }
+
+
         }
 
         if (special.getKillOnUse()) {
             this.setDead();
         }
+        return null;
     }
 
     public boolean setPath(Tiles.Tile tile) {
@@ -131,6 +180,10 @@ class Unit extends GameElement {
         }
         return add;
     }
+    public void transferOwnershipTo(Nation nation) {
+        nation.getUnits().addUnit(new Unit(nation, this));
+        this.setDead();
+    }
     public boolean attack(Tiles.Tile tile) {
         if (isDead) return false;
 
@@ -147,8 +200,7 @@ class Unit extends GameElement {
 
         if (otherUnit.getConfig().getDefense() == 0 && this.getConfig().getAttack() > 0) {
             // Capture unit (Mark other unit for deletion and copy to new nation)
-            nation.getUnits().addUnit(new Unit(nation, otherUnit));
-            otherUnit.setDead();
+            otherUnit.transferOwnershipTo(nation);
             return true;
         }
         if (otherUnit.getConfig().getDefense() + randomAttackAdder() < this.getConfig().getAttack() + randomAttackAdder()) {

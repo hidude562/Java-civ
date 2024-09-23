@@ -2,6 +2,8 @@ package game.components;
 
 import java.util.ArrayList;
 
+// TODO: Remove because this class is stupid
+
 class AssortedUnitUnits {
     ArrayList<Unit> units;
 
