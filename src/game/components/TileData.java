@@ -108,6 +108,7 @@ class TileData extends TileType {
                 return u.getNation();
             }
         }
+        if(hasCityCenter()) {return cityCenter.getNation();}
         return null;
     }
 }

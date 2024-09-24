@@ -2,8 +2,7 @@ package game.components;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,14 +13,18 @@ class SwingMain extends JFrame {
     private JLabel turnLabel;
     private int turnCount;
     private Map<Nation, Color> nationColors;
+    private Nation playerNation;
+    private Unit selectedUnit;
+    private City selectedCity;
 
     public SwingMain() {
         world = new World(new Vert2D(32, 20));
         turnCount = 0;
         initializeNationColors();
+        playerNation = world.getNations().getNations().get(0); // Set the first nation as the player's nation
 
         setTitle("NATIONS");
-        setSize(1200, 1200);
+        setSize(1200, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -42,6 +45,13 @@ class SwingMain extends JFrame {
             }
         });
 
+        gamePanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleMouseClick(e.getX(), e.getY());
+            }
+        });
+
         updateDisplay();
     }
 
@@ -53,12 +63,6 @@ class SwingMain extends JFrame {
             nationColors.put(nation, colors[colorIndex % colors.length]);
             colorIndex++;
         }
-    }
-
-    private void nextTurn() {
-        world.nextTurn();
-        turnCount++;
-        updateDisplay();
     }
 
     private void updateDisplay() {
@@ -145,6 +149,90 @@ class SwingMain extends JFrame {
                 default: return Color.WHITE;
             }
         }
+    }
+
+    private void handleMouseClick(int x, int y) {
+        int tileX = x / GamePanel.TILE_SIZE;
+        int tileY = y / GamePanel.TILE_SIZE;
+        Tiles.Tile clickedTile = world.getTiles().getTile(world.getTiles().getIndexFromPoint(new Vert2D(tileX, tileY)));
+
+        if (clickedTile != null) {
+            if (clickedTile.hasUnit() && clickedTile.getUnit(0).getNation() == playerNation) {
+                selectedUnit = clickedTile.getUnit(0);
+                selectedCity = null;
+                showUnitActions();
+            } else if (clickedTile.hasCityCenter() && clickedTile.getCityCenter().getNation() == playerNation) {
+                selectedCity = clickedTile.getCityCenter();
+                selectedUnit = null;
+                showCityActions();
+            } else if (selectedUnit != null) {
+                selectedUnit.setPath(clickedTile);
+                selectedUnit = null;
+            }
+            updateDisplay();
+        }
+    }
+
+    private void showUnitActions() {
+        JPopupMenu popup = new JPopupMenu();
+        JMenuItem moveItem = new JMenuItem("Move");
+        moveItem.addActionListener(e -> {
+            // The next click will set the path for the unit
+        });
+        popup.add(moveItem);
+
+        for(SpecialMoveConfig special : selectedUnit.getConfig().getUnitSpecials()) {
+            JMenuItem specialItem = new JMenuItem(special.getName());
+            specialItem.addActionListener(e -> {
+                selectedUnit.unitAction(special.getImplementationId());
+                selectedUnit = null;
+                updateDisplay();
+            });
+            popup.add(specialItem);
+        }
+        Vert2D position = selectedUnit.getTile().getPosition();
+        popup.show(gamePanel, position.getX() * GamePanel.TILE_SIZE,
+                position.getY() * GamePanel.TILE_SIZE);
+    }
+
+    private void showCityActions() {
+        JPopupMenu popup = new JPopupMenu();
+        JMenu productionMenu = new JMenu("Set Production");
+
+        for (GameThings.UnitConfigReference unitRef : selectedCity.getNation().getTechTree().getUnlocks().getUnitsRefs()) {
+            JMenuItem unitItem = new JMenuItem(((UnitConfig) unitRef.get()).getName());
+            unitItem.addActionListener(e -> {
+                selectedCity.setProduction(unitRef);
+                selectedCity = null;
+                updateDisplay();
+            });
+            productionMenu.add(unitItem);
+        }
+
+        for (GameThings.BuildingConfigReference buildingRef : selectedCity.getBuildingsCanMake()) {
+            JMenuItem buildingItem = new JMenuItem(((BuildingConfig) buildingRef.get()).getName());
+            buildingItem.addActionListener(e -> {
+                selectedCity.setProduction(buildingRef);
+                selectedCity = null;
+                updateDisplay();
+            });
+            productionMenu.add(buildingItem);
+        }
+
+        popup.add(productionMenu);
+        popup.show(gamePanel, selectedCity.getCityCenterTile().getPosition().getX() * GamePanel.TILE_SIZE,
+                selectedCity.getCityCenterTile().getPosition().getY() * GamePanel.TILE_SIZE);
+    }
+
+    private void nextTurn() {
+        for (Nation nation : world.getNations().getNations()) {
+            if (nation != playerNation) {
+                new AI(nation, world).takeTurn();
+            }
+        }
+        world.nextTurn();
+        turnCount++;
+        updateDisplay();
     }
 
     public static void main(String[] args) {

@@ -27,12 +27,12 @@ class TechTree {
     }
     public static final TechnologyData[] techTree = {
             new TechnologyData("Pottery", new int[0]),
-            new TechnologyData("Bronze working", new int[0], new GameThings.Reference[]{new GameThings.UnitConfigReference(3)}),
+            new TechnologyData("Bronze working", new int[0], new GameThings.Reference[]{new GameThings.UnitConfigReference(7)}),
             new TechnologyData("Alphabet", new int[0],       new GameThings.Reference[]{new GameThings.BuildingConfigReference(0)}),
             new TechnologyData("Agriculture", new int[0]),
 
-            new TechnologyData("Wheel", new int[]{0},        new GameThings.Reference[]{new GameThings.UnitConfigReference(5)}),
-            new TechnologyData("Mining", new int[]{1},       new GameThings.Reference[]{new GameThings.UnitConfigReference(4), new GameThings.BuildingConfigReference(8)}),
+            new TechnologyData("Wheel", new int[]{0},        new GameThings.Reference[]{new GameThings.UnitConfigReference(9)}),
+            new TechnologyData("Mining", new int[]{1},       new GameThings.Reference[]{new GameThings.UnitConfigReference(8), new GameThings.BuildingConfigReference(8)}),
             new TechnologyData("Writing", new int[]{2}),
             new TechnologyData("Irrigation", new int[]{3}),
 
@@ -42,34 +42,34 @@ class TechTree {
             new TechnologyData("Art", new int[]{0, 6},       new GameThings.Reference[]{new GameThings.BuildingConfigReference(5)}),
 
             new TechnologyData("Banking", new int[]{8},                 new GameThings.Reference[]{new GameThings.BuildingConfigReference(3)}),
-            new TechnologyData("Chivalry", new int[]{9, 7},             new GameThings.Reference[]{new GameThings.UnitConfigReference(8)}),
-            new TechnologyData("Education", new int[]{10},              new GameThings.Reference[]{new GameThings.UnitConfigReference(7), new GameThings.BuildingConfigReference(1)}),
-            new TechnologyData("Divine right", new int[]{10, 11},       new GameThings.Reference[]{new GameThings.BuildingConfigReference(6), new GameThings.UnitConfigReference(6)}),
+            new TechnologyData("Chivalry", new int[]{9, 7},             new GameThings.Reference[]{new GameThings.UnitConfigReference(12)}),
+            new TechnologyData("Education", new int[]{10},              new GameThings.Reference[]{new GameThings.UnitConfigReference(11), new GameThings.BuildingConfigReference(1)}),
+            new TechnologyData("Divine right", new int[]{10, 11},       new GameThings.Reference[]{new GameThings.BuildingConfigReference(6), new GameThings.UnitConfigReference(10)}),
 
-            new TechnologyData("Urbanization", new int[]{12},           new GameThings.Reference[]{new GameThings.UnitConfigReference(9)}),
+            new TechnologyData("Urbanization", new int[]{12},           new GameThings.Reference[]{new GameThings.BuildingConfigReference(9)}),
             new TechnologyData("Invention", new int[]{12, 14}),
             new TechnologyData("Colonialism", new int[]{12}),
-            new TechnologyData("Gunpowder", new int[]{14},              new GameThings.Reference[]{new GameThings.UnitConfigReference(9)}),
+            new TechnologyData("Gunpowder", new int[]{14},              new GameThings.Reference[]{new GameThings.UnitConfigReference(13)}),
 
             new TechnologyData("Industrialization", new int[]{16, 17}),
-            new TechnologyData("Explosives", new int[]{19},             new GameThings.Reference[]{new GameThings.UnitConfigReference(10)}),
-            new TechnologyData("Locomotion", new int[]{18},             new GameThings.Reference[]{new GameThings.UnitConfigReference(11)}),
+            new TechnologyData("Explosives", new int[]{19},             new GameThings.Reference[]{new GameThings.UnitConfigReference(14)}),
+            new TechnologyData("Locomotion", new int[]{18},             new GameThings.Reference[]{new GameThings.UnitConfigReference(15)}),
             new TechnologyData("Nationalism", new int[]{18}),
 
             new TechnologyData("Communism", new int[]{20, 23}),
-            new TechnologyData("Combustion", new int[]{21, 22},         new GameThings.Reference[]{new GameThings.UnitConfigReference(14)}),
-            new TechnologyData("Artillery", new int[]{21, 22},          new GameThings.Reference[]{new GameThings.UnitConfigReference(13)}),
-            new TechnologyData("Mass production", new int[]{19, 20},    new GameThings.Reference[]{new GameThings.UnitConfigReference(12)}),
+            new TechnologyData("Combustion", new int[]{21, 22},         new GameThings.Reference[]{new GameThings.UnitConfigReference(18)}),
+            new TechnologyData("Artillery", new int[]{21, 22},          new GameThings.Reference[]{new GameThings.UnitConfigReference(17)}),
+            new TechnologyData("Mass production", new int[]{19, 20},    new GameThings.Reference[]{new GameThings.UnitConfigReference(16)}),
 
             new TechnologyData("Chemistry", new int[]{27}),
             new TechnologyData("Nuclear Fission", new int[]{25, 26}),
             new TechnologyData("Flight", new int[]{25}),
             new TechnologyData("Computers", new int[]{27}),
 
-            new TechnologyData("Guidance systems", new int[]{28, 30},   new GameThings.Reference[]{new GameThings.UnitConfigReference(16)}),
-            new TechnologyData("Modern armor", new int[]{25, 28},       new GameThings.Reference[]{new GameThings.UnitConfigReference(17)}),
+            new TechnologyData("Guidance systems", new int[]{28, 30},   new GameThings.Reference[]{new GameThings.UnitConfigReference(20)}),
+            new TechnologyData("Modern armor", new int[]{25, 28},       new GameThings.Reference[]{new GameThings.UnitConfigReference(21)}),
             new TechnologyData("Advanced flight", new int[]{30}),
-            new TechnologyData("Mechanized Infantry", new int[]{31},    new GameThings.Reference[]{new GameThings.UnitConfigReference(15)}),
+            new TechnologyData("Mechanized Infantry", new int[]{31},    new GameThings.Reference[]{new GameThings.UnitConfigReference(19)}),
 
             new TechnologyData("Nanotechnology", new int[]{32}),
             new TechnologyData("Nuclear fusion", new int[]{29}),

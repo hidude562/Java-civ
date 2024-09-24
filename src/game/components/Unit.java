@@ -187,15 +187,15 @@ class Unit extends GameElement {
     public boolean attack(Tiles.Tile tile) {
         if (isDead) return false;
 
+        System.out.println("Atack!");
+        if (!tile.hasUnit())
+            return true;
+
         Unit otherUnit = tile.getUnit(0);
 
         if (otherUnit.getIsDead())
             return true;
         if (otherUnit.getNation() == this.getNation())
-            return true;
-
-        System.out.println("Atack!");
-        if (!tile.hasUnit())
             return true;
 
         if (otherUnit.getConfig().getDefense() == 0 && this.getConfig().getAttack() > 0) {
@@ -204,7 +204,7 @@ class Unit extends GameElement {
             return true;
         }
         if (otherUnit.getConfig().getDefense() + randomAttackAdder() < this.getConfig().getAttack() + randomAttackAdder()) {
-            setDead();
+            otherUnit.setDead();
             return true;
         }
         setDead();
@@ -217,10 +217,13 @@ class Unit extends GameElement {
         int distanceToTile = distanceToTile(tile);
         if (distanceToTile != -1 && distanceToTile <= this.movementLeft) {
             this.tile.removeUnit(this);
+            boolean canMove = true;
             if (tile.getNationality() != null && tile.getNationality() != nation) {
-                attack(tile);
+                canMove = attack(tile);
                 this.movementLeft -= distanceToTile;
-            } else {
+            }
+            
+            if(canMove) {
                 this.tile = tile;
                 this.tile.addUnit(this);
                 this.movementLeft -= distanceToTile;
