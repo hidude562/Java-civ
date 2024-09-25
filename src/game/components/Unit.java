@@ -136,7 +136,11 @@ class Unit extends GameElement {
                     }
                 } else if (implementationId == 6) {
                     City closestEnemyCity = tile.getClosestEnemyCity();
-                    closestEnemyCity.cultureFlipTo(nation);
+                    if(closestEnemyCity != null) {
+                        closestEnemyCity.cultureFlipTo(nation);
+                    } else {
+                        return "No enemy city is flippable!";
+                    }
                 }
             } else {
                 return "You can only activate a Famous Person passive bonus in a city center!";
@@ -203,6 +207,11 @@ class Unit extends GameElement {
             otherUnit.transferOwnershipTo(nation);
             return true;
         }
+        if (this.getConfig().getDefense() == 0 && otherUnit.getConfig().getAttack() > 0) {
+            // Capture unit (Mark other unit for deletion and copy to new nation)
+            this.transferOwnershipTo(otherUnit.getNation());
+            return true;
+        }
         if (otherUnit.getConfig().getDefense() + randomAttackAdder() < this.getConfig().getAttack() + randomAttackAdder()) {
             otherUnit.setDead();
             return true;
@@ -222,7 +231,7 @@ class Unit extends GameElement {
                 canMove = attack(tile);
                 this.movementLeft -= distanceToTile;
             }
-            
+
             if(canMove) {
                 this.tile = tile;
                 this.tile.addUnit(this);

@@ -120,6 +120,9 @@ class AI {
             Tiles.Tile bestLocation = findBestSettleLocation(settler);
             if (bestLocation != null) {
                 System.out.println(settler.setPath(bestLocation));
+            } else {
+                // TODO: Selling units?
+                settler.setDead();
             }
         }
     }
@@ -141,9 +144,12 @@ class AI {
             }
             if(lowestCity != null) {
                 unit.setPath(lowestCity.getCityCenterTile());
-            } else {
+            }
+            /*
+            else {
                 patrolBorders(unit);
             }
+             */
         }
     }
 
@@ -229,7 +235,6 @@ class AI {
                 }
             }
         }
-        System.out.println("GAY");
         return null;
     }
 

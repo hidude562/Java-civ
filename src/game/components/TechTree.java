@@ -32,7 +32,7 @@ class TechTree {
             new TechnologyData("Agriculture", new int[0]),
 
             new TechnologyData("Wheel", new int[]{0},        new GameThings.Reference[]{new GameThings.UnitConfigReference(9)}),
-            new TechnologyData("Mining", new int[]{1},       new GameThings.Reference[]{new GameThings.UnitConfigReference(8), new GameThings.BuildingConfigReference(8)}),
+            new TechnologyData("Mining", new int[]{1},       new GameThings.Reference[]{new GameThings.UnitConfigReference(8), new GameThings.BuildingConfigReference(7)}),
             new TechnologyData("Writing", new int[]{2}),
             new TechnologyData("Irrigation", new int[]{3}),
 

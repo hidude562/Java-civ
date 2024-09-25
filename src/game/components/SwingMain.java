@@ -18,7 +18,7 @@ class SwingMain extends JFrame {
     private City selectedCity;
 
     public SwingMain() {
-        world = new World(new Vert2D(32, 20));
+        world = new World(new Vert2D(30, 20));
         turnCount = 0;
         initializeNationColors();
         playerNation = world.getNations().getNations().get(0); // Set the first nation as the player's nation
@@ -57,7 +57,7 @@ class SwingMain extends JFrame {
 
     private void initializeNationColors() {
         nationColors = new HashMap<>();
-        Color[] colors = {Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.MAGENTA, Color.CYAN, Color.GRAY, Color.DARK_GRAY, Color.ORANGE, Color.WHITE};
+        Color[] colors = {Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.MAGENTA, Color.CYAN, Color.GRAY, Color.DARK_GRAY, Color.ORANGE};
         int colorIndex = 0;
         for (Nation nation : world.getNations().getNations()) {
             nationColors.put(nation, colors[colorIndex % colors.length]);

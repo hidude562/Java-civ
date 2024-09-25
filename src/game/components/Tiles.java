@@ -230,11 +230,9 @@ class Tiles {
                 It finds the best path in linear time
                 But it will only always work when it is a convex shape
              */
-            System.out.println("Skbidi");
             ArrayList<Tile> path = new ArrayList<>();
             Tile currentTile = this;
             if (!pathFinderConfig.canGoOnTile(targetTile)) return null;
-            System.out.println("Maybe");
 
             while (!targetTile.getPosition().equals(currentTile.getPosition())) {
                 Vert2D delta = Vert2D.delta(targetTile.getPosition(), currentTile.getPosition());
@@ -276,7 +274,6 @@ class Tiles {
                     return null;
 
                 path.add(currentTile);
-                System.out.println(currentTile.getPosition());
             }
             return path;
         }
@@ -383,10 +380,10 @@ class Tiles {
         }
 
         public City getClosestEnemyCity() {
-            for(int i = 1; i < 10; i++) {
+            for(int i = 1; i < 20; i++) {
                 Tile[] tiles = getTilesExactlyInRange(i);
                 for(Tile t : tiles) {
-                    if(t.hasCityCenter() && t.getOwnedNation() != this.getOwnedNation()) {
+                    if(t!=null && t.hasCityCenter() && t.getOwnedNation() != this.getOwnedNation()) {
                         return t.getCityCenter();
                     }
                 }
