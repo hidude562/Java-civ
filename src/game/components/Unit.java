@@ -99,15 +99,6 @@ class Unit extends GameElement {
             }
         }
 
-        if (implementationId == 1 || implementationId == 2 || implementationId == 3) {
-            City c = tile.getCityCenter();
-            if(c != null) {
-                c.getBuilder().instantBuild(new GameThings.BuildingConfigReference(implementationId + 9));
-            } else {
-                return "You can only activate a Famous Person passive bonus in a city center!";
-            }
-        }
-
         // Famous people passives
         if (implementationId == 1 || implementationId == 2 || implementationId == 3) {
             City c = tile.getCityCenter();
@@ -185,7 +176,7 @@ class Unit extends GameElement {
         return add;
     }
     public void transferOwnershipTo(Nation nation) {
-        nation.getUnits().addUnit(new Unit(nation, this));
+        nation.getUnits().addUnit(new Unit(nation, this, tile));
         this.setDead();
     }
     public boolean attack(Tiles.Tile tile) {
@@ -205,18 +196,15 @@ class Unit extends GameElement {
         if (otherUnit.getConfig().getDefense() == 0 && this.getConfig().getAttack() > 0) {
             // Capture unit (Mark other unit for deletion and copy to new nation)
             otherUnit.transferOwnershipTo(nation);
-            return true;
-        }
-        if (this.getConfig().getDefense() == 0 && otherUnit.getConfig().getAttack() > 0) {
-            // Capture unit (Mark other unit for deletion and copy to new nation)
-            this.transferOwnershipTo(otherUnit.getNation());
-            return true;
-        }
-        if (otherUnit.getConfig().getDefense() + randomAttackAdder() < this.getConfig().getAttack() + randomAttackAdder()) {
+        } else if (otherUnit.getConfig().getDefense() + randomAttackAdder() < this.getConfig().getAttack() + randomAttackAdder()) {
             otherUnit.setDead();
+        } else {
+            setDead();
+        }
+
+        if(tile.getNationality() == null || tile.getNationality() == nation) {
             return true;
         }
-        setDead();
         return false;
     }
     // Moves from one point, to the next if it is valid
@@ -225,7 +213,6 @@ class Unit extends GameElement {
 
         int distanceToTile = distanceToTile(tile);
         if (distanceToTile != -1 && distanceToTile <= this.movementLeft) {
-            this.tile.removeUnit(this);
             boolean canMove = true;
             if (tile.getNationality() != null && tile.getNationality() != nation) {
                 canMove = attack(tile);
@@ -233,6 +220,7 @@ class Unit extends GameElement {
             }
 
             if(canMove) {
+                this.tile.removeUnit(this);
                 this.tile = tile;
                 this.tile.addUnit(this);
                 this.movementLeft -= distanceToTile;

@@ -181,10 +181,14 @@ class SwingMain extends JFrame {
         });
         popup.add(moveItem);
 
-        for(SpecialMoveConfig special : selectedUnit.getConfig().getUnitSpecials()) {
+
+        SpecialMoveConfig[] unitSpecials = selectedUnit.getConfig().getUnitSpecials();
+        for (int i = 0; i < unitSpecials.length; i++) {
+            SpecialMoveConfig special = unitSpecials[i];
             JMenuItem specialItem = new JMenuItem(special.getName());
+            final int id = i;
             specialItem.addActionListener(e -> {
-                selectedUnit.unitAction(special.getImplementationId());
+                selectedUnit.unitAction(id);
                 selectedUnit = null;
                 updateDisplay();
             });

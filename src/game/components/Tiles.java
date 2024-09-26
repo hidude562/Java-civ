@@ -384,10 +384,12 @@ class Tiles {
                 Tile[] tiles = getTilesExactlyInRange(i);
                 for(Tile t : tiles) {
                     if(t!=null && t.hasCityCenter() && t.getOwnedNation() != this.getOwnedNation()) {
+                        System.out.println("Flippable city");
                         return t.getCityCenter();
                     }
                 }
             }
+            System.out.println("No flippable city");
             return null;
         }
     }

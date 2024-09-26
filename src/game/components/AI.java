@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 class AI {
     private Nation nation;
     private World world;
+    private ArrayList<City> threatenedCitiesListCache;
 
     public AI(Nation nation, World world) {
         this.nation = nation;
@@ -18,6 +19,8 @@ class AI {
         manageCities();
         manageUnits();
         manageDiplomacy();
+
+        threatenedCitiesListCache = null;
     }
 
     private void manageCities() {
@@ -50,6 +53,9 @@ class AI {
     private boolean shouldBuildUnit(City city) {
         int cityCount = nation.getCities().getCities().size();
         int unitCount = nation.getUnits().size();
+        if(findMostThreatenedCities().contains(city)) {
+            return true;
+        }
         return Math.random() < 0.5;
     }
 
@@ -180,27 +186,31 @@ class AI {
     }
 
     private ArrayList<City> findMostThreatenedCities() {
-        // Implement logic to determine which city is under the most threat
-        // TODO: Logic by getting the most menacing tiles
-        ArrayList<City> cities = new ArrayList<City>();
-        for(City c : nation.getCities().getCities()) {
-            Tiles.Tile cityCenter = c.getCityCenterTile();
-            int numUnits = cityCenter.getUnits().size();
-            if(numUnits == 0) {
-                cities.add(c);
-            } else if(numUnits < 3) {
-                Tiles.Tile[] nearbyTiles = cityCenter.getTilesExactlyInRange(2);
-                for(Tiles.Tile t : nearbyTiles) {
-                    if(t != null) {
-                        Nation nationality = t.getOwnedNation();
-                        if(nationality != null && nationality != this.nation) {
-                            cities.add(c);
+        if(threatenedCitiesListCache == null) {
+            // Implement logic to determine which city is under the most threat
+            // TODO: Logic by getting the most menacing tiles
+            ArrayList<City> cities = new ArrayList<City>();
+            for (City c : nation.getCities().getCities()) {
+                Tiles.Tile cityCenter = c.getCityCenterTile();
+                int numUnits = cityCenter.getUnits().size();
+                if (numUnits == 0) {
+                    cities.add(c);
+                } else if (numUnits < 3) {
+                    Tiles.Tile[] nearbyTiles = cityCenter.getTilesExactlyInRange(2);
+                    for (Tiles.Tile t : nearbyTiles) {
+                        if (t != null) {
+                            Nation nationality = t.getOwnedNation();
+                            if (nationality != null && nationality != this.nation) {
+                                cities.add(c);
+                            }
                         }
                     }
                 }
             }
+            threatenedCitiesListCache = cities;
+            return cities;
         }
-        return cities;
+        return threatenedCitiesListCache;
     }
 
     private void patrolBorders(Unit unit) {

@@ -6,9 +6,9 @@ class GameThings {
     public static final UnitConfig[] units = new UnitConfig[] {
             new UnitConfig("Settler", 2, 0, 0, new int[]{0}, new PathfinderConfig(true, new int[]{0, 1}), 30),
 
-            new UnitConfig("Great Scientist", 3, 0, 0, new int[]{1, 2}, new PathfinderConfig(true, new int[]{0, 1}), 30),
-            new UnitConfig("Great Engineer", 3, 0, 0, new int[]{3, 4}, new PathfinderConfig(true, new int[]{0, 1}), 30),
-            new UnitConfig("Great Artist", 3, 0, 0, new int[]{5, 6}, new PathfinderConfig(true, new int[]{0, 1}), 30),
+            new UnitConfig("Great Scientist", 3, 0, 0, new int[]{1, 4}, new PathfinderConfig(true, new int[]{0, 1}), 30),
+            new UnitConfig("Great Engineer", 3, 0, 0, new int[]{2, 5}, new PathfinderConfig(true, new int[]{0, 1}), 30),
+            new UnitConfig("Great Artist", 3, 0, 0, new int[]{3, 6}, new PathfinderConfig(true, new int[]{0, 1}), 30),
 
             new UnitConfig("Militia", 1, 0, 2, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 20),
             new UnitConfig("Warrior", 1, 1, 1, new int[]{}, new PathfinderConfig(true, new int[]{0, 1}), 10),
