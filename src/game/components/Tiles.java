@@ -374,18 +374,22 @@ class Tiles {
             // TODO: fix
             if(tileData() == null) return null;
             if(tileData().getOwnedCity() == null) return null;
-            if(tileData().getOwnedCity().getNation() == null) return null;
 
             return tileData().getOwnedCity().getNation();
         }
 
         public City getClosestEnemyCity() {
-            for(int i = 1; i < 20; i++) {
-                Tile[] tiles = getTilesExactlyInRange(i);
-                for(Tile t : tiles) {
-                    if(t!=null && t.hasCityCenter() && t.getOwnedNation() != this.getOwnedNation()) {
-                        System.out.println("Flippable city");
-                        return t.getCityCenter();
+            for(int i = 1; i < 85; i+=1) {
+                Tiles.Tile[] tiles = getTilesExactlyInRange(i);
+                for (Tiles.Tile tile : tiles) {
+                    if(tile != null) {
+                        if(tile.hasCityCenter()) {
+                            Nation otherTileNation = tile.getCityCenter().getNation();
+                            if (otherTileNation != null && getNationality() != otherTileNation) { //
+                                System.out.println("Flipable city");
+                                return tile.getCityCenter();
+                            }
+                        }
                     }
                 }
             }

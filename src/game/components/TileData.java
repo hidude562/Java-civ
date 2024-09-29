@@ -54,7 +54,12 @@ class TileData extends TileType {
     }
 
     public boolean hasUnit() {
-        return units.size() > 0;
+        for(int i = 0; i < units.size(); i++) {
+            if(units.get(i) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Unit getUnit(int index) {

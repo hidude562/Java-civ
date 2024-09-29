@@ -103,7 +103,10 @@ class Unit extends GameElement {
         if (implementationId == 1 || implementationId == 2 || implementationId == 3) {
             City c = tile.getCityCenter();
             if(c != null) {
-                c.getBuilder().instantBuild(new GameThings.BuildingConfigReference(implementationId + 9));
+                boolean hasBuilt = c.getBuilder().instantBuild(new GameThings.BuildingConfigReference(implementationId + 9));
+                if(!hasBuilt) {
+                    return "You already have the passive bonus for this Great person type in the city!";
+                }
             } else {
                 return "You can only activate a Famous Person passive bonus in a city center!";
             }
@@ -176,7 +179,9 @@ class Unit extends GameElement {
         return add;
     }
     public void transferOwnershipTo(Nation nation) {
-        nation.getUnits().addUnit(new Unit(nation, this, tile));
+        Unit copy = new Unit(nation, this, tile);
+        tile.addUnit(copy);
+        nation.addUnit(copy);
         this.setDead();
     }
     public boolean attack(Tiles.Tile tile) {

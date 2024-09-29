@@ -51,12 +51,16 @@ class Nation extends GameElement {
         System.out.println(citiesYields);
         techTreeManage();
 
-        cities.nextTurn();
         units.nextTurn();
+        cities.nextTurn();
     }
 
     public TechTree getTechTree() {
         return techTree;
+    }
+
+    public boolean hasCity() {
+        return cities.getCities().size() > 0;
     }
 
     class Units extends GameElement {
@@ -84,8 +88,9 @@ class Nation extends GameElement {
                 if (u.getIsDead()) {
                     units.remove(i);
                     i--;
+                } else {
+                    u.nextTurn();
                 }
-                u.nextTurn();
             }
         }
 

@@ -44,9 +44,13 @@ class City extends GameElement {
 
     public void cultureFlipTo(Nation nation) {
         // You own the city, and all of the units in the direct center too
-        for(Unit u : cityCenterTile.getUnits().units) {
+        ArrayList<Unit> units = cityCenterTile.getUnits().units;
+        for (int i = 0; i < units.size(); i++) {
+            Unit u = units.get(i);
+            //u.setDead();
             u.transferOwnershipTo(nation);
         }
+        nation.getUnits().addUnit(new Unit(nation, new GameThings.UnitConfigReference(4), cityCenterTile));
         exchangeOwnershipIfTaken();
     }
 
@@ -121,23 +125,25 @@ class City extends GameElement {
             return this.buildable;
         }
 
-        public void instantBuild(GameThings.Reference buildable) {
+        public boolean instantBuild(GameThings.Reference buildable) {
+            boolean built;
             if(this.buildable == null || buildable.get() != this.buildable.get()) {
                 GameThings.Reference formerBuildable = this.buildable;
                 setBuildable(buildable);
-                buildThing();
+                built = buildThing();
                 this.buildable = formerBuildable;
             } else {
-                buildThing();
+                built = buildThing();
                 setBuildable(null);
             }
+            return built;
         }
 
         public void instantBuild() {
             buildThing();
         }
 
-        private void buildThing() {
+        private boolean buildThing() {
             // Add the Building to the city, or the unit to the city's tile
 
             if (buildable instanceof GameThings.UnitConfigReference) {
@@ -155,10 +161,13 @@ class City extends GameElement {
                 }
                 nation.getUnits().addUnit(u);
             } else if (buildable instanceof GameThings.BuildingConfigReference) {
-                // Assuming there is an addBuilding method in the City class
+                if(hasBuilding((GameThings.BuildingConfigReference) buildable)) {
+                    return false;
+                }
                 Building b = new Building((GameThings.BuildingConfigReference) buildable);
                 addBuilding(b);
             }
+            return true;
         }
 
         private void completeProduction() {

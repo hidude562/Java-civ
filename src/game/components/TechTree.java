@@ -132,7 +132,8 @@ class TechTree {
         return this.researchingTech != null;
     }
     public void instantResearch() {
-
+        scienceProgress = getScienceToCompleteTechnology();
+        finishTechIfFinished();
     }
     public int getScienceToCompleteTechnology() {
         if(researchingTech == null)
